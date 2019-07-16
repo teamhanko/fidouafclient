@@ -1,0 +1,54 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="io.hanko.fidouafclient">
+
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <uses-feature
+        android:name="android.hardware.fingerprint"
+        android:required="false" />
+
+    <application>
+        <activity
+            android:name="io.hanko.fidouafclient.MainActivity"
+            android:clearTaskOnLaunch="true"
+            android:launchMode="singleTop"
+            android:theme="@style/AppTheme.NoUi">
+
+            <intent-filter>
+                <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />
+
+                <data android:mimeType="application/fido.uaf_client+json" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".asm.AsmFingerprintActivity"
+            android:clearTaskOnLaunch="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.AppCompat.Light.Dialog">
+            <intent-filter>
+                <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />
+
+                <data android:mimeType="application/fido.uaf_asm+json" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".asm.AsmLockscreenActivity"
+            android:clearTaskOnLaunch="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.AppCompat.Light.Dialog">
+            <intent-filter>
+                <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />
+
+                <data android:mimeType="application/fido.uaf_asm+json" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
