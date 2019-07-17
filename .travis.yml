@@ -39,7 +39,7 @@ before_install:
 stages:
   - name: build
   - name: release
-    if: branch = master AND tag IS present
+    if: tag IS present
 
 jobs:
   include:
