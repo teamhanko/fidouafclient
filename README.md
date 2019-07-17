@@ -1,4 +1,5 @@
 # FIDO UAF Client & Authenticator
+[![Build Status](https://travis-ci.org/teamhanko/fidouafclient.svg?branch=master)](https://travis-ci.org/teamhanko/fidouafclient)
 
 FIDO UAF Client & Authenticator for Android by Hanko.
 
