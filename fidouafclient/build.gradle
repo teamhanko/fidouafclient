@@ -50,7 +50,7 @@ publishing {
     publications {
         Production(MavenPublication) {
             from components.android
-            
+
             groupId 'io.hanko'
             artifactId 'fidouafclient'
             version getVersionName()
@@ -65,7 +65,7 @@ bintray {
     key = project.hasProperty('bintrayKey') ? project.property('bintrayKey') : System.getenv('BINTRAY_KEY')
     publications = ['Production']
 
-    dryRun = true
+    dryRun = false
     override = false
     pkg {
         repo = 'android'
