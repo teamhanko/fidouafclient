@@ -44,7 +44,7 @@ dependencies {
 }
 
 group = 'io.hanko'
-version = getVersionName()
+version = getVersionName().toString()
 
 publishing {
     publications {
@@ -53,7 +53,7 @@ publishing {
 
             groupId 'io.hanko'
             artifactId 'fidouafclient'
-            version getVersionName()
+            version getVersionName().toString()
         }
     }
 }
@@ -66,7 +66,7 @@ bintray {
     publications = ['Production']
 
     dryRun = false
-    override = false
+
     pkg {
         repo = 'android'
         name = 'fidouafclient'
@@ -75,10 +75,10 @@ bintray {
         vcsUrl = 'https://github.com/teamhanko/fidouafclient.git'
         publish = true
         version {
-            name = getVersionName()
-            desc = "${projectDisplayName}: ${getVersionName}"
+            name = getVersionName().toString()
+            desc = "${projectDisplayName}: ${getVersionName().toString()}"
             released = new Date()
-            vcsTag = getVersionName()
+            vcsTag = getVersionName().toString()
         }
     }
 }
