@@ -3,6 +3,8 @@ package io.hanko.fidouafclient.authenticator.fingerprint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.hardware.fingerprint.FingerprintManager;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Base64;
 import android.util.Log;
 
@@ -24,6 +26,7 @@ import io.hanko.fidouafclient.client.tlv.UnsignedUtil;
 import io.hanko.fidouafclient.utility.Crypto;
 import io.hanko.fidouafclient.utility.Preferences;
 
+@RequiresApi(api = Build.VERSION_CODES.M)
 public class Reg {
 
     private String TAG = "Authenticator_Fingerprint_Reg";

@@ -4,7 +4,9 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.hardware.fingerprint.FingerprintManager;
+import android.os.Build;
 import android.os.CancellationSignal;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -12,7 +14,7 @@ import android.widget.Toast;
 
 import io.hanko.fidouafclient.R;
 
-
+@RequiresApi(api = Build.VERSION_CODES.M)
 public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallback {
 
     static final long ERROR_TIMEOUT_MILLIS = 1600;

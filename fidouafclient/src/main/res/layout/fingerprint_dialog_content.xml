@@ -29,7 +29,7 @@
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:text="@string/fingerprint_description"
-        android:textAppearance="@android:style/TextAppearance.Material.Subhead"
+        android:textAppearance="@style/AppTheme.MaterialSubhead"
         android:textColor="?android:attr/textColorSecondary" />
 
 
@@ -44,7 +44,7 @@
 
     <TextView
         android:id="@+id/fingerprint_status"
-        style="@android:style/TextAppearance.Material.Body1"
+        style="@style/AppTheme.MaterialBody"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignTop="@+id/fingerprint_icon"

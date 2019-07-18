@@ -30,8 +30,10 @@ public class Reg {
     private String TAG = "Authenticator_Lockscreen_Reg";
     private Gson gson;
     private SharedPreferences sharedPreferences;
+    private Context context;
 
     public Reg(Context context) {
+        this.context = context;
         gson = new Gson();
         sharedPreferences = Preferences.create(context, Preferences.LOCKSCREEN_PREFERENCE);
     }
@@ -40,7 +42,7 @@ public class Reg {
 
         String keyID = Crypto.generateKeyID(asmRequestReg.args.appID);
 
-        if(Crypto.generateKeyPairForLockscreen(keyID)) {
+        if(Crypto.generateKeyPairForLockscreen(context, keyID)) {
             Set<String> keyIds = Preferences.getParamSet(sharedPreferences, asmRequestReg.args.appID);
             Set<String> newKeyIds = new HashSet<>(keyIds);
             newKeyIds.add(keyID);

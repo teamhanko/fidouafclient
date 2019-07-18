@@ -1,14 +1,18 @@
 package io.hanko.fidouafclient.utility;
 
+import android.content.Context;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Build;
+import android.security.KeyPairGeneratorSpec;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.util.Base64;
 import android.util.Log;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPairGenerator;
@@ -25,12 +29,16 @@ import java.security.SignatureException;
 import java.security.UnrecoverableEntryException;
 import java.security.cert.CertificateException;
 import java.security.spec.ECGenParameterSpec;
+import java.util.Calendar;
+
+import javax.security.auth.x500.X500Principal;
 
 public class Crypto {
 
     private static String KEYSTORE = "AndroidKeyStore";
     private static String TAG = "Crypto";
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     public static boolean generateKeyPair(final String keyId) {
         try {
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, KEYSTORE);
@@ -41,7 +49,7 @@ public class Crypto {
                     .setAlgorithmParameterSpec(new ECGenParameterSpec("secp256r1"))
                     .setUserAuthenticationRequired(true);
 
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 keyGenSpecBuilder.setInvalidatedByBiometricEnrollment(false);
             }
 
@@ -54,22 +62,52 @@ public class Crypto {
         }
     }
 
-    public static boolean generateKeyPairForLockscreen(final String keyId) {
-        try {
-            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, KEYSTORE);
-            keyPairGenerator.initialize(
-                    new KeyGenParameterSpec.Builder(
-                            keyId,
-                            KeyProperties.PURPOSE_SIGN
-                    ).setDigests(KeyProperties.DIGEST_SHA256, KeyProperties.DIGEST_SHA384, KeyProperties.DIGEST_SHA512)
-                            .setAlgorithmParameterSpec(new ECGenParameterSpec("secp256r1"))
-                            .setUserAuthenticationRequired(true)
-                            .setUserAuthenticationValidityDurationSeconds(5)
-                            .build()
-            );
+    private static boolean generateKeyPairApi16(Context context, final String keyId) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
+        // for KeyPairGenerator with EC prior to API Level 23 see: https://developer.android.com/training/articles/keystore.html#SupportedKeyPairGenerators
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", KEYSTORE);
+        ECGenParameterSpec ecGenParameterSpec = new ECGenParameterSpec("secp256r1");
 
-            keyPairGenerator.generateKeyPair();
-            return true;
+        Calendar startDate = Calendar.getInstance();
+        Calendar endDate = Calendar.getInstance();
+        endDate.add(Calendar.YEAR, 100);
+
+        KeyPairGeneratorSpec keyPairGeneratorSpec = new KeyPairGeneratorSpec.Builder(context)
+                .setKeyType(KeyProperties.KEY_ALGORITHM_EC)
+                .setAlias(keyId)
+                .setKeySize(256)
+                .setAlgorithmParameterSpec(ecGenParameterSpec)
+                .setEncryptionRequired()
+                .setSubject(new X500Principal("CN=FIDO-UAF"))
+                .setSerialNumber(BigInteger.valueOf(Math.abs(new SecureRandom().nextLong())))
+                .setStartDate(startDate.getTime())
+                .setEndDate(endDate.getTime())
+                .build();
+
+        keyPairGenerator.initialize(keyPairGeneratorSpec);
+        keyPairGenerator.generateKeyPair();
+        return true;
+    }
+
+    public static boolean generateKeyPairForLockscreen(Context context, final String keyId) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, KEYSTORE);
+                keyPairGenerator.initialize(
+                        new KeyGenParameterSpec.Builder(
+                                keyId,
+                                KeyProperties.PURPOSE_SIGN
+                        ).setDigests(KeyProperties.DIGEST_SHA256, KeyProperties.DIGEST_SHA384, KeyProperties.DIGEST_SHA512)
+                                .setAlgorithmParameterSpec(new ECGenParameterSpec("secp256r1"))
+                                .setUserAuthenticationRequired(true)
+                                .setUserAuthenticationValidityDurationSeconds(5)
+                                .build()
+                );
+
+                keyPairGenerator.generateKeyPair();
+                return true;
+            } else {
+                return generateKeyPairApi16(context, keyId);
+            }
         } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidAlgorithmParameterException e) {
             Log.e(TAG, "Error while generating KeyPair for lockscreen", e);
             return false;
@@ -151,6 +189,7 @@ public class Crypto {
         return null;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     public static byte[] getSignature(FingerprintManager.CryptoObject cryptoObject, byte[] signedData) {
         try {
             Signature signature = cryptoObject.getSignature();

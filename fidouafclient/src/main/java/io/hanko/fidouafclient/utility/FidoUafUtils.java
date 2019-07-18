@@ -7,6 +7,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.util.Base64;
 import android.util.Log;
 
@@ -125,8 +126,12 @@ public class FidoUafUtils {
     }
 
     public static boolean canUseFingerprintAuthenticator(Context context) {
-        FingerprintManager fingerprintManager = (FingerprintManager) context.getSystemService(Context.FINGERPRINT_SERVICE);
-        return fingerprintManager != null && fingerprintManager.isHardwareDetected() && fingerprintManager.hasEnrolledFingerprints();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            FingerprintManager fingerprintManager = (FingerprintManager) context.getSystemService(Context.FINGERPRINT_SERVICE);
+            return fingerprintManager != null && fingerprintManager.isHardwareDetected() && fingerprintManager.hasEnrolledFingerprints();
+        } else {
+            return false;
+        }
     }
 
     public static Class<?> getAsmFromPolicy(Context context, Policy policy) {
@@ -139,15 +144,31 @@ public class FidoUafUtils {
     }
 
     public static Class<?> getAsmFromAaid(Context context, String aaid) {
-        KeyguardManager keyguardManager = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
-        FingerprintManager fingerprintManager = (FingerprintManager) context.getSystemService(Context.FINGERPRINT_SERVICE);
-
-        if(Objects.equals(aaid, AuthenticatorConfig.authenticator_fingerprint.aaid) && fingerprintManager.hasEnrolledFingerprints() && fingerprintManager.isHardwareDetected()) {
+        if(isFingerprint(context, aaid)) {
             return AsmFingerprintActivity.class;
-        } else if (Objects.equals(aaid, AuthenticatorConfig.authenticator_lockscreen.aaid) && keyguardManager.isDeviceSecure()) {
+        } else if (isLockscreen(context, aaid)) {
             return AsmLockscreenActivity.class;
         } else {
             return null;
+        }
+    }
+
+    private static boolean isFingerprint(Context context, String aaid) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            FingerprintManager fingerprintManager = (FingerprintManager) context.getSystemService(Context.FINGERPRINT_SERVICE);
+            return Objects.equals(aaid, AuthenticatorConfig.authenticator_fingerprint.aaid) && fingerprintManager.hasEnrolledFingerprints() && fingerprintManager.isHardwareDetected();
+        } else {
+            return false;
+        }
+    }
+
+
+    private static boolean isLockscreen(Context context, String aaid) {
+        KeyguardManager keyguardManager = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return Objects.equals(aaid, AuthenticatorConfig.authenticator_lockscreen.aaid) && keyguardManager.isDeviceSecure();
+        } else {
+            return Objects.equals(aaid, AuthenticatorConfig.authenticator_lockscreen.aaid) && keyguardManager.isKeyguardSecure();
         }
     }
 

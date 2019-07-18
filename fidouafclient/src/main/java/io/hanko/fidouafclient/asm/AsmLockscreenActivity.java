@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.app.KeyguardManager;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
@@ -45,7 +46,7 @@ public class AsmLockscreenActivity extends AppCompatActivity {
         requestMessage = requestIntent.getStringExtra(INTENT_MESSAGE);
         asmRequest = ASMRequest.fromJson(requestMessage);
 
-        if (!mKeyguardManager.isDeviceSecure()) {
+        if (!isDeviceSecure()) {
             new AlertDialog.Builder(this)
                     .setTitle(R.string.screenlock)
                     .setMessage(R.string.screenlock_msg)
@@ -66,6 +67,14 @@ public class AsmLockscreenActivity extends AppCompatActivity {
             } else {
                 showAuthenticationScreen();
             }
+        }
+    }
+
+    private boolean isDeviceSecure() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return mKeyguardManager.isDeviceSecure();
+        } else {
+            return mKeyguardManager.isKeyguardSecure();
         }
     }
 

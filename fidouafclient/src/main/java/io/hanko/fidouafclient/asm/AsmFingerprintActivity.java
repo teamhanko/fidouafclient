@@ -7,8 +7,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.fingerprint.FingerprintManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -39,6 +41,7 @@ import io.hanko.fidouafclient.utility.Preferences;
 
 import static io.hanko.fidouafclient.asm.FingerprintUiHelper.MY_PERMISSIONS_USE_FINGERPRINT;
 
+@RequiresApi(api = Build.VERSION_CODES.M)
 public class AsmFingerprintActivity extends AppCompatActivity implements FingerprintUiHelper.Callback {
 
     private String TAG = "AsmFingerprintActivity";
