@@ -11,7 +11,7 @@
 
     <application>
         <activity
-            android:name="io.hanko.fidouafclient.MainActivity"
+            android:name=".client.MainActivity"
             android:clearTaskOnLaunch="true"
             android:launchMode="singleTop"
             android:theme="@style/AppTheme.NoUi">

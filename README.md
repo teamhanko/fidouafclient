@@ -6,6 +6,8 @@ FIDO UAF Client & Authenticator for Android by Hanko.
 
 ## Installation
 
+The package is distributed through JCenter.
+
 ### Gradle
 
 `implementation 'io.hanko:fidouafclient:<latest-version>'`
