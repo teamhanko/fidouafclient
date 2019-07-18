@@ -49,7 +49,7 @@ jobs:
     - stage: release
       script:
         - ./gradlew build -PversionName=$TRAVIS_TAG
-        - ./gradlew bintrayUpload -PversionName=$TRAVIS_TAG
+        - ./gradlew :fidouafclient:bintrayUpload -PversionName=$TRAVIS_TAG
 
 notifications:
   email: false

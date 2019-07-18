@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">FIDOUafExample</string>
+    <string name="authenticate">Authenticate</string>
+    <string name="register">Register</string>
+    <string name="header">FIDO UAF client demo</string>
+</resources>
