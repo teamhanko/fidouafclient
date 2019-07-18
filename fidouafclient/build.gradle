@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'digital.wup.android-maven-publish'
+apply plugin: 'org.jetbrains.dokka-android'
 
 final def getVersionName = { ->
     return project.hasProperty('versionName') ? versionName : "0.0.0"
@@ -43,6 +44,29 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
 
+// PUBLISHING
+
+task generateSourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    archiveClassifier.set('sources')
+    group = 'build'
+}
+
+task generateJavaDoc(type: org.jetbrains.dokka.gradle.DokkaTask) {
+    outputFormat = 'javadoc'
+    outputDirectory = "$buildDir/docs/javadoc"
+    description = "Generates the Javadoc for this module."
+    group = 'documentation'
+}
+
+task generateJavadocJar(type: Jar) {
+    from generateJavaDoc
+    archiveClassifier.set('javadoc')
+    destinationDirectory.set(file("$buildDir/outputs/javadoc"))
+    description = "Builds up a jar of this module´´ Javadoc."
+    group = 'build'
+}
+
 group = 'io.hanko'
 version = getVersionName().toString()
 
@@ -50,6 +74,8 @@ publishing {
     publications {
         Production(MavenPublication) {
             from components.android
+            artifact generateSourcesJar
+            artifact generateJavadocJar
 
             groupId 'io.hanko'
             artifactId 'fidouafclient'
