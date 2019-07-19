@@ -74,7 +74,7 @@ This client is not complete and has the following limitations. But if you only w
 
 # License
 
-	Copyright 2019 Hanko
+	Copyright 2019 Hanko GmbH
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
