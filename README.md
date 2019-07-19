@@ -4,7 +4,7 @@
 
 FIDO UAF Client & Authenticator for Android by Hanko.
 
-**Supported UAF Versions:** 1.0
+**Supported UAF versions:** 1.0
 
 > For more information on how FIDO UAF works, see [FIDO Alliance](https://fidoalliance.org/specifications/download/).
 
@@ -60,16 +60,16 @@ protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 }
 ```
 
-> **Note:** All available ErrorCodes can be found [here](https://fidoalliance.org/specs/fido-uaf-v1.0-ps-20141208/fido-uaf-client-api-transport-v1.0-ps-20141208.html#idl-def-ErrorCode).
+> **Note:** All available ErrorCodes can be found [here](https://fidoalliance.org/specs/fido-uaf-v1.1-ps-20170202/fido-uaf-client-api-transport-v1.1-ps-20170202.html#errorcode-interface).
 
 ## Limitations
 
-This client is not complete and have the following limitations. But if you only want an FIDO UAF Client and Authenticator to Register and Authenticate a user you are ready to go.
+This client is not complete and has the following limitations. But if you only want a FIDO UAF client and authenticator to register and authenticate a user, you are ready to go.
 
-- The client only uses its build in authenticators
-- The client does not return Authenticators on `DISCOVER`
-- The client does not check the policy on `CHECK_POLICY`, but returns always `NO_ERROR`
-- The build in authenticators are not usable from an other FIDO client
+- The client only uses its build-in authenticators
+- The client does not return authenticators on `DISCOVER`
+- The client does not check the policy on `CHECK_POLICY` and always returns `NO_ERROR`
+- The build-in authenticators are not usable by any other FIDO client or ASM
 
 # License
 
