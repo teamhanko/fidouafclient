@@ -70,6 +70,7 @@ This client is not complete and has the following limitations. But if you only w
 - The client does not return authenticators on `DISCOVER`
 - The client does not check the policy on `CHECK_POLICY` and always returns `NO_ERROR`
 - The build-in authenticators are not usable by any other FIDO client or ASM
+- The client only works, if the aaids are explicit allowed in the policy
 
 # License
 
