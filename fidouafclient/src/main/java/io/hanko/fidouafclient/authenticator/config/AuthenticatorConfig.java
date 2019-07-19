@@ -10,7 +10,7 @@ public class AuthenticatorConfig {
 
     public static Authenticator authenticator_fingerprint = new Authenticator(
             "Hanko Fido UAF Authenticator (Fingerprint)",
-            "A4A4#0001",
+            "C3C3#0001",
             "UAF Fingerprint Client/Authenticator from Hanko",
             supportedVersions,
             "UAFV1TLV",
@@ -30,7 +30,7 @@ public class AuthenticatorConfig {
 
     public static Authenticator authenticator_lockscreen = new Authenticator(
             "Hanko FIDO UAF Authenticator (Lockscreen)",
-            "A4A4#0003",
+            "C3C3#0003",
             "UAF Lockscreen Client/Authenticator from Hanko",
             supportedVersions,
             "UAFV1TLV",
