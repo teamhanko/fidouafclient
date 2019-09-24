@@ -24,4 +24,8 @@ public class Version {
 		this.major = major;
 		this.minor = minor;
     }
+
+    public Version() {
+
+    }
 }

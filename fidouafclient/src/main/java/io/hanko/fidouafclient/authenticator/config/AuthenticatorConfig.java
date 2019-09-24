@@ -5,8 +5,8 @@ import io.hanko.fidouafclient.client.msg.Version;
 
 public class AuthenticatorConfig {
 
-    private static Version[] supportedVersions = { new Version(1,0) };
-    private static short[] attestationTypes = { 0x3E08 };
+    private static Version[] supportedVersions = { new Version(1,0), new Version(1, 1) };
+    private static short[] attestationTypes = { 0x3E08 }; // 15880 => Surrogate
 
     public static Authenticator authenticator_fingerprint = new Authenticator(
             "Hanko Fido UAF Authenticator (Fingerprint)",

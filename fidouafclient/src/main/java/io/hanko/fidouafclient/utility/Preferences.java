@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class Preferences {
@@ -26,6 +27,7 @@ public class Preferences {
     }
 
     public static Set<String> getParamSet(final SharedPreferences preferences, final String paramName) {
+        preferences.getAll();
         return preferences.getStringSet(paramName, new HashSet<String>());
     }
 

@@ -15,6 +15,7 @@ import io.hanko.fidouafclient.client.MainActivity;
 import io.hanko.fidouafclient.client.interfaces.AsmStart;
 import io.hanko.fidouafclient.client.msg.DeregisterAuthenticator;
 import io.hanko.fidouafclient.client.msg.DeregistrationRequest;
+import io.hanko.fidouafclient.client.msg.UafDeregistrationRequest;
 import io.hanko.fidouafclient.client.msg.client.UAFIntentType;
 import io.hanko.fidouafclient.utility.ErrorCode;
 import io.hanko.fidouafclient.utility.FidoUafUtils;
@@ -35,12 +36,12 @@ public class Deregistration {
         this.gson = new Gson();
     }
 
-    public void processRequests(final DeregistrationRequest[] deregistrationRequests) {
+    public void processRequests(final UafDeregistrationRequest[] deregistrationRequests) {
         String keyId = "";
         String aaid = "";
 
-        for (DeregistrationRequest deregistrationRequest : deregistrationRequests) {
-            for (DeregisterAuthenticator deregisterAuthenticator : deregistrationRequest.authenticators) {
+        for (UafDeregistrationRequest deregistrationRequest : deregistrationRequests) {
+            for (DeregisterAuthenticator deregisterAuthenticator : deregistrationRequest.getAuthenticators()) {
                 if (Objects.equals(deregisterAuthenticator.aaid, AuthenticatorConfig.authenticator_fingerprint.aaid) || Objects.equals(deregisterAuthenticator.aaid, AuthenticatorConfig.authenticator_lockscreen.aaid)) {
                     keyId = deregisterAuthenticator.keyID;
                     aaid = deregisterAuthenticator.aaid;
@@ -49,14 +50,14 @@ public class Deregistration {
         }
 
         DeregisterIn deregisterIn = new DeregisterIn();
-        deregisterIn.appID = deregistrationRequests[0].header.appID;
+        deregisterIn.appID = deregistrationRequests[0].getHeader().appID;
         deregisterIn.keyID = keyId;
 
         ASMRequestDereg asmRequestDereg = new ASMRequestDereg();
         asmRequestDereg.authenticatorIndex = 0;
         asmRequestDereg.requestType = Request.Deregister;
         asmRequestDereg.exts = null;
-        asmRequestDereg.asmVersion = deregistrationRequests[0].header.upv;
+        asmRequestDereg.asmVersion = deregistrationRequests[0].getHeader().upv;
         asmRequestDereg.args = deregisterIn;
 
         try {

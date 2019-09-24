@@ -11,6 +11,12 @@ public enum ErrorCode {
     PROTOCOL_ERROR((short) 0x06),
     UNTRUSTED_FACET_ID((short) 0x07),
     KEY_DISAPPEARED_PERMANENTLY((short) 0x09),
+    AUTHENTICATOR_ACCESS_DENIED((short) 0x0c),
+    INVALID_TRANSACTION_CONTENT((short) 0x0d),
+    USER_NOT_RESPONSIVE((short) 0x0e),
+    INSUFFICIENT_AUTHENTICATOR_RESOURCES((short) 0x0f),
+    USER_LOCKOUT((short) 0x10),
+    USER_NOT_ENROLLED((short) 0x11),
     UNKNOWN((short) 0xFF);
 
     private final short ID;

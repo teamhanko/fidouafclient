@@ -11,6 +11,13 @@ import android.widget.Button;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.util.Collections;
+
 public class MainActivity extends AppCompatActivity {
 
     private static int REQUEST_CODE = 1000;
@@ -69,7 +76,11 @@ public class MainActivity extends AppCompatActivity {
                 } catch (JSONException ex) {
                     Log.e(TAG, "Error", ex);
                 }
+            } else {
+                Log.e(TAG, "ErrorCode: " + errorCode);
             }
+        } else {
+            Log.e(TAG, "ResultCode: " + resultCode);
         }
     }
 }

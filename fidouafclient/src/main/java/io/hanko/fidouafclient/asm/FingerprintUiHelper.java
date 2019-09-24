@@ -14,7 +14,6 @@ import android.widget.Toast;
 
 import io.hanko.fidouafclient.R;
 
-@RequiresApi(api = Build.VERSION_CODES.M)
 public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallback {
 
     static final long ERROR_TIMEOUT_MILLIS = 1600;

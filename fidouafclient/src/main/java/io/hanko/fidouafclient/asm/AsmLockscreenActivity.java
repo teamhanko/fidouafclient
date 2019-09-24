@@ -71,11 +71,7 @@ public class AsmLockscreenActivity extends AppCompatActivity {
     }
 
     private boolean isDeviceSecure() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            return mKeyguardManager.isDeviceSecure();
-        } else {
-            return mKeyguardManager.isKeyguardSecure();
-        }
+        return mKeyguardManager.isDeviceSecure();
     }
 
     private void processRegistration() {

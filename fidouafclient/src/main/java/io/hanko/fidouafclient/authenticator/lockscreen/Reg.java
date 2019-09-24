@@ -42,7 +42,7 @@ public class Reg {
 
         String keyID = Crypto.generateKeyID(asmRequestReg.args.appID);
 
-        if(Crypto.generateKeyPairForLockscreen(context, keyID)) {
+        if(Crypto.generateKeyPairForLockscreen(keyID)) {
             Set<String> keyIds = Preferences.getParamSet(sharedPreferences, asmRequestReg.args.appID);
             Set<String> newKeyIds = new HashSet<>(keyIds);
             newKeyIds.add(keyID);

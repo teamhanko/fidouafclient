@@ -33,6 +33,10 @@ import io.hanko.fidouafclient.asm.msgs.request.ASMRequestAuth;
 import io.hanko.fidouafclient.asm.msgs.request.ASMRequestDereg;
 import io.hanko.fidouafclient.asm.msgs.request.ASMRequestReg;
 import io.hanko.fidouafclient.asm.msgs.response.ASMResponse;
+import io.hanko.fidouafclient.asm.msgs.response.ASMResponseGetInfo;
+import io.hanko.fidouafclient.asm.msgs.response.AuthenticatorInfo;
+import io.hanko.fidouafclient.asm.msgs.response.GetInfoOut;
+import io.hanko.fidouafclient.authenticator.config.AuthenticatorConfig;
 import io.hanko.fidouafclient.authenticator.fingerprint.Auth;
 import io.hanko.fidouafclient.authenticator.fingerprint.Dereg;
 import io.hanko.fidouafclient.authenticator.fingerprint.Reg;
@@ -41,7 +45,6 @@ import io.hanko.fidouafclient.utility.Preferences;
 
 import static io.hanko.fidouafclient.asm.FingerprintUiHelper.MY_PERMISSIONS_USE_FINGERPRINT;
 
-@RequiresApi(api = Build.VERSION_CODES.M)
 public class AsmFingerprintActivity extends AppCompatActivity implements FingerprintUiHelper.Callback {
 
     private String TAG = "AsmFingerprintActivity";
@@ -90,6 +93,17 @@ public class AsmFingerprintActivity extends AppCompatActivity implements Fingerp
                 this
         );
 
+        if (asmRequest.requestType == Request.GetInfo) {
+            ASMResponseGetInfo asmResponseGetInfo = new ASMResponseGetInfo();
+            asmResponseGetInfo.responseData = new GetInfoOut(AuthenticatorInfo.fromAuthenticator(AuthenticatorConfig.authenticator_fingerprint, mFingerprintManager.hasEnrolledFingerprints()));
+
+            sendResponse(gson.toJson(asmResponseGetInfo));
+            finish();
+        } else if (asmRequest.requestType == Request.GetRegistrations) {
+            sendResponse("");
+            finish();
+        }
+
         if (!mFingerprintUiHelper.isFingerprintAuthAvailable(this)) {
             new AlertDialog.Builder(this)
                     .setTitle(R.string.fingerprint_not_enrolled)
@@ -107,29 +121,32 @@ public class AsmFingerprintActivity extends AppCompatActivity implements Fingerp
                     });
         } else {
             if (asmRequest.requestType == Request.Register) {
-                ASMRequestReg asmRequestReg = gson.fromJson(requestMessage, ASMRequestReg.class);
-                newKeyId = Crypto.generateKeyID(asmRequestReg.args.appID);
-
-                if(Crypto.generateKeyPair(newKeyId)) {
-                    // add newly created keyId to SharedPreferences, so we recognize it when it is used for authentication
-                    Set<String> keyIds = Preferences.getParamSet(sharedPreferences, asmRequestReg.args.appID);
-                    Set<String> newKeyIds = new HashSet<>(keyIds);
-                    newKeyIds.add(newKeyId);
-                    Preferences.setParamSet(sharedPreferences, asmRequestReg.args.appID, newKeyIds);
-
-                    Signature signature = Crypto.getSignatureInstance(newKeyId);
-                    if (signature != null) {
-                        mCryptoObject = new FingerprintManager.CryptoObject(signature);
-                        mFingerprintContent.setVisibility(View.VISIBLE);
-                        mFingerprintUiHelper.startListening(mCryptoObject, this);
-                    } else {
-                        sendErrorResponse(StatusCode.UAF_ASM_STATUS_ERROR);
-                    }
-                } else {
-                    sendErrorResponse(StatusCode.UAF_ASM_STATUS_ERROR);
-                }
+                startRegistration(sharedPreferences);
+                //ASMRequestReg asmRequestReg = gson.fromJson(requestMessage, ASMRequestReg.class);
+                //newKeyId = Crypto.generateKeyID(asmRequestReg.args.appID);
+//
+                //if(Crypto.generateKeyPair(newKeyId)) {
+                //    // TODO: we could skip the save, we can use `KeyStore.aliases` for this, but we have to distinguish between fingerprint and lockscreen and for already created keys this is not so easy
+                //    // add newly created keyId to SharedPreferences, so we recognize it when it is used for authentication
+                //    Set<String> keyIds = Preferences.getParamSet(sharedPreferences, asmRequestReg.args.appID);
+                //    Set<String> newKeyIds = new HashSet<>(keyIds);
+                //    newKeyIds.add(newKeyId);
+                //    Preferences.setParamSet(sharedPreferences, asmRequestReg.args.appID, newKeyIds);
+//
+                //    Signature signature = Crypto.getSignatureInstance(newKeyId);
+                //    if (signature != null) {
+                //        mCryptoObject = new FingerprintManager.CryptoObject(signature);
+                //        mFingerprintContent.setVisibility(View.VISIBLE);
+                //        mFingerprintUiHelper.startListening(mCryptoObject, this);
+                //    } else {
+                //        sendErrorResponse(StatusCode.UAF_ASM_STATUS_ERROR);
+                //    }
+                //} else {
+                //    sendErrorResponse(StatusCode.UAF_ASM_STATUS_ERROR);
+                //}
             } else if (asmRequest.requestType == Request.Authenticate) {
-                try {
+                startAuthentication(sharedPreferences);
+                /*try {
                     ASMRequestAuth asmRequestAuth = gson.fromJson(requestMessage, ASMRequestAuth.class);
                     Signature signature = Crypto.getSignatureInstance(Auth.getKeyId(asmRequestAuth, Preferences.create(this, Preferences.FINGERPRINT_PREFERENCE)));
                     if (signature != null) {
@@ -141,12 +158,54 @@ public class AsmFingerprintActivity extends AppCompatActivity implements Fingerp
                 } catch (Exception e) {
                     Log.e(TAG, "Error while creating CryptoObject", e);
                     sendErrorResponse(StatusCode.UAF_ASM_STATUS_ERROR);
-                }
+                }*/
             } else if (asmRequest.requestType == Request.Deregister) {
                 processDeregistration();
             } else { // TODO: process other RequestTypes (getInfo, openSettings, etc.)
                 sendErrorResponse(null);
             }
+        }
+    }
+
+    private void startRegistration(SharedPreferences sharedPreferences) {
+        ASMRequestReg asmRequestReg = gson.fromJson(requestMessage, ASMRequestReg.class);
+        newKeyId = Crypto.generateKeyID(asmRequestReg.args.appID);
+
+        if(Crypto.generateKeyPair(newKeyId)) {
+            // TODO: we could skip the save, we can use `KeyStore.aliases` for this, but we have to distinguish between fingerprint and lockscreen and for already created keys this is not so easy
+            // add newly created keyId to SharedPreferences, so we recognize it when it is used for authentication
+            Set<String> keyIds = Preferences.getParamSet(sharedPreferences, asmRequestReg.args.appID);
+            Set<String> newKeyIds = new HashSet<>(keyIds);
+            newKeyIds.add(newKeyId);
+            Preferences.setParamSet(sharedPreferences, asmRequestReg.args.appID, newKeyIds);
+
+            Signature signature = Crypto.getSignatureInstance(newKeyId);
+            if (signature != null) {
+                mCryptoObject = new FingerprintManager.CryptoObject(signature);
+                mFingerprintContent.setVisibility(View.VISIBLE);
+                mFingerprintUiHelper.startListening(mCryptoObject, this);
+            } else {
+                sendErrorResponse(StatusCode.UAF_ASM_STATUS_ERROR);
+            }
+        } else {
+            sendErrorResponse(StatusCode.UAF_ASM_STATUS_ERROR);
+        }
+    }
+
+    private void startAuthentication(SharedPreferences sharedPreferences) {
+        try {
+            ASMRequestAuth asmRequestAuth = gson.fromJson(requestMessage, ASMRequestAuth.class);
+            // TODO: we could skip the get keyId from sharedPreferences, we could use `KeyStore.aliases` for this
+            Signature signature = Crypto.getSignatureInstance(Auth.getKeyId(asmRequestAuth, sharedPreferences));
+            if (signature != null) {
+                mCryptoObject = new FingerprintManager.CryptoObject(signature);
+                mFingerprintUiHelper.startListening(mCryptoObject, this);
+            } else {
+                sendErrorResponse(StatusCode.UAF_ASM_STATUS_KEY_DISAPPEARED_PERMANENTLY);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error while creating CryptoObject", e);
+            sendErrorResponse(StatusCode.UAF_ASM_STATUS_ERROR);
         }
     }
 

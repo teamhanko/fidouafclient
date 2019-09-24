@@ -57,8 +57,7 @@ public class FidoUafUtils {
 
             return "android:apk-key-hash:" +
                     Base64.encodeToString(md.digest(c.getEncoded()), Base64.DEFAULT | Base64.NO_WRAP | Base64.NO_PADDING);
-        }
-        catch (PackageManager.NameNotFoundException | CertificateException | NoSuchAlgorithmException e) {
+        } catch (PackageManager.NameNotFoundException | CertificateException | NoSuchAlgorithmException e) {
             Log.e(TAG, "Error while getting FacetID", e);
         }
 
@@ -98,9 +97,9 @@ public class FidoUafUtils {
      * @return true if the policy can be evaluated
      */
     public static boolean canEvaluatePolicy(Policy policy) {
-        for (MatchCriteria[] allowed: policy.accepted) {
-            for (MatchCriteria matchCriteria: allowed) {
-                for (String aaid: matchCriteria.aaid) {
+        for (MatchCriteria[] allowed : policy.accepted) {
+            for (MatchCriteria matchCriteria : allowed) {
+                for (String aaid : matchCriteria.aaid) {
                     if (Objects.equals(aaid, AuthenticatorConfig.authenticator_fingerprint.aaid) || Objects.equals(aaid, AuthenticatorConfig.authenticator_lockscreen.aaid)) {
                         return true;
                     }
@@ -111,10 +110,10 @@ public class FidoUafUtils {
     }
 
     public static String extractPreferredAuthenticatorAaidFromPolicy(Context context, Policy policy) {
-        for (MatchCriteria[] allowed: policy.accepted) {
-            for (MatchCriteria matchCriteria: allowed) {
+        for (MatchCriteria[] allowed : policy.accepted) {
+            for (MatchCriteria matchCriteria : allowed) {
                 if (matchCriteria.aaid.length > 0) {
-                    if(Objects.equals(matchCriteria.aaid[0], AuthenticatorConfig.authenticator_fingerprint.aaid) && canUseFingerprintAuthenticator(context)) {
+                    if (Objects.equals(matchCriteria.aaid[0], AuthenticatorConfig.authenticator_fingerprint.aaid) && canUseFingerprintAuthenticator(context)) {
                         return matchCriteria.aaid[0];
                     } else if (Objects.equals(matchCriteria.aaid[0], AuthenticatorConfig.authenticator_lockscreen.aaid)) {
                         return matchCriteria.aaid[0];
@@ -126,12 +125,8 @@ public class FidoUafUtils {
     }
 
     public static boolean canUseFingerprintAuthenticator(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            FingerprintManager fingerprintManager = (FingerprintManager) context.getSystemService(Context.FINGERPRINT_SERVICE);
-            return fingerprintManager != null && fingerprintManager.isHardwareDetected() && fingerprintManager.hasEnrolledFingerprints();
-        } else {
-            return false;
-        }
+        FingerprintManager fingerprintManager = (FingerprintManager) context.getSystemService(Context.FINGERPRINT_SERVICE);
+        return fingerprintManager != null && fingerprintManager.isHardwareDetected() && fingerprintManager.hasEnrolledFingerprints();
     }
 
     public static Class<?> getAsmFromPolicy(Context context, Policy policy) {
@@ -144,7 +139,7 @@ public class FidoUafUtils {
     }
 
     public static Class<?> getAsmFromAaid(Context context, String aaid) {
-        if(isFingerprint(context, aaid)) {
+        if (isFingerprint(context, aaid)) {
             return AsmFingerprintActivity.class;
         } else if (isLockscreen(context, aaid)) {
             return AsmLockscreenActivity.class;
@@ -154,22 +149,13 @@ public class FidoUafUtils {
     }
 
     private static boolean isFingerprint(Context context, String aaid) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            FingerprintManager fingerprintManager = (FingerprintManager) context.getSystemService(Context.FINGERPRINT_SERVICE);
-            return Objects.equals(aaid, AuthenticatorConfig.authenticator_fingerprint.aaid) && fingerprintManager.hasEnrolledFingerprints() && fingerprintManager.isHardwareDetected();
-        } else {
-            return false;
-        }
+        FingerprintManager fingerprintManager = (FingerprintManager) context.getSystemService(Context.FINGERPRINT_SERVICE);
+        return Objects.equals(aaid, AuthenticatorConfig.authenticator_fingerprint.aaid) && fingerprintManager.hasEnrolledFingerprints() && fingerprintManager.isHardwareDetected();
     }
-
 
     private static boolean isLockscreen(Context context, String aaid) {
         KeyguardManager keyguardManager = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            return Objects.equals(aaid, AuthenticatorConfig.authenticator_lockscreen.aaid) && keyguardManager.isDeviceSecure();
-        } else {
-            return Objects.equals(aaid, AuthenticatorConfig.authenticator_lockscreen.aaid) && keyguardManager.isKeyguardSecure();
-        }
+        return Objects.equals(aaid, AuthenticatorConfig.authenticator_lockscreen.aaid) && keyguardManager.isDeviceSecure();
     }
 
     public static GetAsmResponse getAsmFromKeyId(Context context, String appId, String[] keyIds) {
@@ -180,7 +166,7 @@ public class FidoUafUtils {
         Set<String> fingerprintKeyIds = Preferences.getParamSet(fingerprintPreference, appId);
 
         GetAsmResponse response = null;
-        for (String keyId: keyIds) {
+        for (String keyId : keyIds) {
             if (fingerprintKeyIds.contains(keyId)) {
                 response = new GetAsmResponse(AsmFingerprintActivity.class, keyId);
             } else if (lockscreenKeyIds.contains(keyId)) {

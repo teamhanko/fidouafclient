@@ -21,6 +21,7 @@ import io.hanko.fidouafclient.client.msg.ChannelBinding;
 import io.hanko.fidouafclient.client.msg.FinalChallengeParams;
 import io.hanko.fidouafclient.client.msg.RegistrationRequest;
 import io.hanko.fidouafclient.client.msg.RegistrationResponse;
+import io.hanko.fidouafclient.client.msg.UafRegistrationRequest;
 import io.hanko.fidouafclient.client.msg.Version;
 import io.hanko.fidouafclient.client.msg.client.UAFIntentType;
 import io.hanko.fidouafclient.utility.ErrorCode;
@@ -32,7 +33,7 @@ public class Registration implements FacetIds {
     private Gson gson;
     private AsmStart activity;
     private String facetId;
-    private RegistrationRequest registrationRequest = null;
+    private UafRegistrationRequest registrationRequest = null;
     private String appID;
     private String channelBinding;
     private FinalChallengeParams finalChallengeParams;
@@ -46,22 +47,26 @@ public class Registration implements FacetIds {
         this.gson = new Gson();
     }
 
-    public void processRequests(final RegistrationRequest[] registrationRequests) {
-        for (RegistrationRequest regReq : registrationRequests) {
-            if (regReq.header.upv.major == 1 && regReq.header.upv.minor == 0) {
+    public void processRequests(final UafRegistrationRequest[] registrationRequests) {
+        for (UafRegistrationRequest regReq : registrationRequests) {
+            if (regReq.getHeader().upv.major == 1 && regReq.getHeader().upv.minor == 1) {
+                registrationRequest = regReq;
+                break;
+            }
+            if (regReq.getHeader().upv.major == 1 && regReq.getHeader().upv.minor == 0) {
                 registrationRequest = regReq;
             }
         }
 
         if (registrationRequest == null) {
             activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null);
-        } else if (registrationRequest.header.appID == null || registrationRequest.header.appID.isEmpty() || Objects.equals(registrationRequest.header.appID, facetId)) {
+        } else if (registrationRequest.getHeader().appID == null || registrationRequest.getHeader().appID.isEmpty() || Objects.equals(registrationRequest.getHeader().appID, facetId)) {
             appID = facetId;
             sendToAsm(true);
-        } else if (registrationRequest.header.appID.contains("https://")) {
-            appID = registrationRequest.header.appID;
+        } else if (registrationRequest.getHeader().appID.contains("https://")) {
+            appID = registrationRequest.getHeader().appID;
             FidoUafUtils.GetTrustedFacetsTask getTrustedFacetsTask = new FidoUafUtils.GetTrustedFacetsTask(this);
-            getTrustedFacetsTask.execute(registrationRequest.header.appID);
+            getTrustedFacetsTask.execute(registrationRequest.getHeader().appID);
         } else {
             activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null);
         }
@@ -74,7 +79,7 @@ public class Registration implements FacetIds {
 
         RegistrationResponse[] registrationResponse = new RegistrationResponse[1];
         registrationResponse[0] = new RegistrationResponse();
-        registrationResponse[0].header = registrationRequest.header;
+        registrationResponse[0].header = registrationRequest.getHeader();
         registrationResponse[0].fcParams = Base64.encodeToString(gson.toJson(finalChallengeParams).getBytes(StandardCharsets.UTF_8), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
         registrationResponse[0].assertions = new AuthenticatorRegistrationAssertion[]{registrationAssertion};
 
@@ -85,24 +90,24 @@ public class Registration implements FacetIds {
         if (isFacetIdValid) {
             finalChallengeParams = new FinalChallengeParams();
             finalChallengeParams.appID = appID;
-            finalChallengeParams.challenge = registrationRequest.challenge;
+            finalChallengeParams.challenge = registrationRequest.getChallenge();
             finalChallengeParams.facetID = facetId;
             finalChallengeParams.channelBinding = gson.fromJson(channelBinding, ChannelBinding.class);
 
             RegisterIn registerIn = new RegisterIn();
-            registerIn.attestationType = 15879; // Attestation Basic Full
-            registerIn.username = registrationRequest.username;
+            registerIn.attestationType = 15880; // Attestation Surrogate
+            registerIn.username = registrationRequest.getUsername();
             registerIn.appID = appID;
             registerIn.finalChallenge = Base64.encodeToString(gson.toJson(finalChallengeParams).getBytes(StandardCharsets.UTF_8), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
             
             ASMRequestReg asmRequestReg = new ASMRequestReg();
-            asmRequestReg.asmVersion = registrationRequest.header.upv;
+            asmRequestReg.asmVersion = registrationRequest.getHeader().upv;
             asmRequestReg.requestType = Request.Register;
             asmRequestReg.authenticatorIndex = 0; // authenticator in this App will always have index = 0
             asmRequestReg.args = registerIn;
 
             try { // try-catch as workaround for Huawei smartphones, because they won´t call method
-                activity.sendToAsm(gson.toJson(asmRequestReg), MainActivity.ASM_REG_REQUEST_CODE, FidoUafUtils.getAsmFromPolicy(mContext, registrationRequest.policy));
+                activity.sendToAsm(gson.toJson(asmRequestReg), MainActivity.ASM_REG_REQUEST_CODE, FidoUafUtils.getAsmFromPolicy(mContext, registrationRequest.getPolicy()));
             } catch (Exception e) {
                 Log.e(TAG, "Error while sending asmRegistrationRequest to ASM", e);
                 activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_SUITABLE_AUTHENTICATOR, null);

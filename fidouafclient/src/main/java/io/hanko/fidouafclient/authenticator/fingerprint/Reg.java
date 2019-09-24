@@ -26,7 +26,6 @@ import io.hanko.fidouafclient.client.tlv.UnsignedUtil;
 import io.hanko.fidouafclient.utility.Crypto;
 import io.hanko.fidouafclient.utility.Preferences;
 
-@RequiresApi(api = Build.VERSION_CODES.M)
 public class Reg {
 
     private String TAG = "Authenticator_Fingerprint_Reg";
