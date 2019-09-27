@@ -7,7 +7,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.util.Base64;
 import android.util.Log;
 
@@ -27,10 +26,9 @@ import io.hanko.fidouafclient.asm.AsmFingerprintActivity;
 import io.hanko.fidouafclient.asm.AsmLockscreenActivity;
 import io.hanko.fidouafclient.authenticator.config.AuthenticatorConfig;
 import io.hanko.fidouafclient.client.interfaces.FacetIds;
-import io.hanko.fidouafclient.client.msg.MatchCriteria;
 import io.hanko.fidouafclient.client.msg.Policy;
-import io.hanko.fidouafclient.client.msg.TrustedFacets.TrustedFacets;
-import io.hanko.fidouafclient.client.msg.TrustedFacets.TrustedFacetsList;
+import io.hanko.fidouafclient.client.msg.trustedFacets.TrustedFacets;
+import io.hanko.fidouafclient.client.msg.trustedFacets.TrustedFacetsList;
 import io.hanko.fidouafclient.client.msg.Version;
 
 public class FidoUafUtils {
@@ -69,8 +67,8 @@ public class FidoUafUtils {
             TrustedFacetsList trustedFacetsList = (new Gson()).fromJson(trustedFacetsJson, TrustedFacetsList.class);
             for (TrustedFacets trustedFacets : trustedFacetsList.getTrustedFacets()) {
                 // select the one with the version matching that of the protocol message version
-                if ((trustedFacets.getVersion().minor >= version.minor)
-                        && (trustedFacets.getVersion().major <= version.major)) {
+                if ((trustedFacets.getVersion().getMinor() >= version.getMinor())
+                        && (trustedFacets.getVersion().getMajor() <= version.getMajor())) {
                     //The scheme of URLs in ids MUST identify either an application identity
                     // (e.g. using the apk:, ios: or similar scheme) or an https: Web Origin [RFC6454].
                     String[] searchHelper = appFacetId.split(",");
@@ -96,47 +94,47 @@ public class FidoUafUtils {
      * @param policy which will be evaluated
      * @return true if the policy can be evaluated
      */
-    public static boolean canEvaluatePolicy(Policy policy) {
-        for (MatchCriteria[] allowed : policy.accepted) {
-            for (MatchCriteria matchCriteria : allowed) {
-                for (String aaid : matchCriteria.aaid) {
-                    if (Objects.equals(aaid, AuthenticatorConfig.authenticator_fingerprint.aaid) || Objects.equals(aaid, AuthenticatorConfig.authenticator_lockscreen.aaid)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
+//    public static boolean canEvaluatePolicy(Policy policy) {
+//        for (MatchCriteria[] allowed : policy.accepted) {
+//            for (MatchCriteria matchCriteria : allowed) {
+//                for (String aaid : matchCriteria.aaid) {
+//                    if (Objects.equals(aaid, AuthenticatorConfig.authenticator_fingerprint.aaid) || Objects.equals(aaid, AuthenticatorConfig.authenticator_lockscreen.aaid)) {
+//                        return true;
+//                    }
+//                }
+//            }
+//        }
+//        return false;
+//    }
 
-    public static String extractPreferredAuthenticatorAaidFromPolicy(Context context, Policy policy) {
-        for (MatchCriteria[] allowed : policy.accepted) {
-            for (MatchCriteria matchCriteria : allowed) {
-                if (matchCriteria.aaid.length > 0) {
-                    if (Objects.equals(matchCriteria.aaid[0], AuthenticatorConfig.authenticator_fingerprint.aaid) && canUseFingerprintAuthenticator(context)) {
-                        return matchCriteria.aaid[0];
-                    } else if (Objects.equals(matchCriteria.aaid[0], AuthenticatorConfig.authenticator_lockscreen.aaid)) {
-                        return matchCriteria.aaid[0];
-                    }
-                }
-            }
-        }
-        return "";
-    }
+//    public static String extractPreferredAuthenticatorAaidFromPolicy(Context context, Policy policy) {
+//        for (MatchCriteria[] allowed : policy.accepted) {
+//            for (MatchCriteria matchCriteria : allowed) {
+//                if (matchCriteria.aaid.length > 0) {
+//                    if (Objects.equals(matchCriteria.aaid[0], AuthenticatorConfig.authenticator_fingerprint.aaid) && canUseFingerprintAuthenticator(context)) {
+//                        return matchCriteria.aaid[0];
+//                    } else if (Objects.equals(matchCriteria.aaid[0], AuthenticatorConfig.authenticator_lockscreen.aaid)) {
+//                        return matchCriteria.aaid[0];
+//                    }
+//                }
+//            }
+//        }
+//        return "";
+//    }
 
     public static boolean canUseFingerprintAuthenticator(Context context) {
         FingerprintManager fingerprintManager = (FingerprintManager) context.getSystemService(Context.FINGERPRINT_SERVICE);
         return fingerprintManager != null && fingerprintManager.isHardwareDetected() && fingerprintManager.hasEnrolledFingerprints();
     }
 
-    public static Class<?> getAsmFromPolicy(Context context, Policy policy) {
-        String aaid = extractPreferredAuthenticatorAaidFromPolicy(context, policy);
-        if (!aaid.isEmpty()) {
-            return getAsmFromAaid(context, aaid);
-        }
-
-        return null;
-    }
+//    public static Class<?> getAsmFromPolicy(Context context, Policy policy) {
+//        String aaid = extractPreferredAuthenticatorAaidFromPolicy(context, policy);
+//        if (!aaid.isEmpty()) {
+//            return getAsmFromAaid(context, aaid);
+//        }
+//
+//        return null;
+//    }
 
     public static Class<?> getAsmFromAaid(Context context, String aaid) {
         if (isFingerprint(context, aaid)) {

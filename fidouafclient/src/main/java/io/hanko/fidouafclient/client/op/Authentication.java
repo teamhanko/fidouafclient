@@ -9,6 +9,7 @@ import com.google.gson.Gson;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import io.hanko.fidouafclient.asm.msgs.Request;
@@ -18,7 +19,6 @@ import io.hanko.fidouafclient.asm.msgs.response.AuthenticateOut;
 import io.hanko.fidouafclient.client.MainActivity;
 import io.hanko.fidouafclient.client.interfaces.AsmStart;
 import io.hanko.fidouafclient.client.interfaces.FacetIds;
-import io.hanko.fidouafclient.client.msg.AuthenticationRequest;
 import io.hanko.fidouafclient.client.msg.AuthenticationResponse;
 import io.hanko.fidouafclient.client.msg.AuthenticatorSignAssertion;
 import io.hanko.fidouafclient.client.msg.ChannelBinding;
@@ -53,35 +53,43 @@ public class Authentication implements FacetIds {
 
     public void processRequests(final UafAuthenticationRequest[] authenticationRequests) {
         for (UafAuthenticationRequest authReq : authenticationRequests) {
-            if (authReq.getHeader().upv.major == 1 && authReq.getHeader().upv.minor == 0) {
+            if (authReq.getHeader().getUpv().getMajor() == 1 && authReq.getHeader().getUpv().getMinor() == 0) {
+                authenticationRequest = authReq;
+                break;
+            }
+            if (authReq.getHeader().getUpv().getMajor() == 1 && authReq.getHeader().getUpv().getMinor() == 0) {
                 authenticationRequest = authReq;
             }
         }
 
         if (authenticationRequest == null) {
             activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null);
-        } else if (authenticationRequest.getHeader().appID == null || authenticationRequest.getHeader().appID.isEmpty() || Objects.equals(authenticationRequest.getHeader().appID, facetId)) {
+        } else if (authenticationRequest.getHeader().getAppID() == null || authenticationRequest.getHeader().getAppID().isEmpty() || Objects.equals(authenticationRequest.getHeader().getAppID(), facetId)) {
             appID = facetId;
             sendToAsm(true);
-        } else if (authenticationRequest.getHeader().appID.contains("https://")){
-            appID = authenticationRequest.getHeader().appID;
+        } else if (authenticationRequest.getHeader().getAppID().contains("https://")){
+            appID = authenticationRequest.getHeader().getAppID();
             FidoUafUtils.GetTrustedFacetsTask getTrustedFacetsTask = new FidoUafUtils.GetTrustedFacetsTask(this);
-            getTrustedFacetsTask.execute(authenticationRequest.getHeader().appID);
+            getTrustedFacetsTask.execute(authenticationRequest.getHeader().getAppID());
         } else {
             activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null);
         }
     }
     
     public void processASMResponse(final AuthenticateOut authenticateOut) {
-        AuthenticatorSignAssertion authenticationAssertion = new AuthenticatorSignAssertion();
-        authenticationAssertion.assertion = authenticateOut.assertion;
-        authenticationAssertion.assertionScheme = authenticateOut.assertionScheme;
+        AuthenticatorSignAssertion authenticationAssertion = new AuthenticatorSignAssertion(authenticateOut.assertion, authenticateOut.assertionScheme, null);
+//        authenticationAssertion.assertion = authenticateOut.assertion;
+//        authenticationAssertion.assertionScheme = authenticateOut.assertionScheme;
 
         AuthenticationResponse[] authenticationResponse = new AuthenticationResponse[1];
-        authenticationResponse[0] = new AuthenticationResponse();
-        authenticationResponse[0].header = authenticationRequest.getHeader();
-        authenticationResponse[0].fcParams = Base64.encodeToString(gson.toJson(finalChallengeParams).getBytes(StandardCharsets.UTF_8), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
-        authenticationResponse[0].assertions = new AuthenticatorSignAssertion[]{authenticationAssertion};
+        authenticationResponse[0] = new AuthenticationResponse(
+                authenticationRequest.getHeader(),
+                Base64.encodeToString(gson.toJson(finalChallengeParams).getBytes(StandardCharsets.UTF_8), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING),
+                Collections.singletonList(authenticationAssertion)
+        );
+//        authenticationResponse[0].header = authenticationRequest.getHeader();
+//        authenticationResponse[0].fcParams = Base64.encodeToString(gson.toJson(finalChallengeParams).getBytes(StandardCharsets.UTF_8), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+//        authenticationResponse[0].assertions = new AuthenticatorSignAssertion[]{authenticationAssertion};
 
         activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_ERROR, gson.toJson(authenticationResponse));
     }
@@ -89,21 +97,21 @@ public class Authentication implements FacetIds {
     private void sendToAsm(final boolean isFacetIdValid) {
         if (isFacetIdValid) {
             try { // try-catch as workaround for Huawei smartphones, because they won´t call AsmStart.sendToAsm
-                ArrayList<String> keyIds = new ArrayList<>();
+                List<String> keyIds = new ArrayList<>();
 
-                for (MatchCriteria[] matchCriterias : authenticationRequest.getPolicy().accepted) {
+                for (List<MatchCriteria> matchCriterias : authenticationRequest.getPolicy().getAccepted()) {
                     for (MatchCriteria matchCriteria : matchCriterias) {
-                        if (matchCriteria.keyIDs != null && matchCriteria.keyIDs.length > 0) {
-                            Collections.addAll(keyIds, matchCriteria.keyIDs);
+                        if (matchCriteria.getKeyIDs() != null && matchCriteria.getKeyIDs().size() > 0) {
+                            keyIds.addAll(matchCriteria.getKeyIDs());
                         }
                     }
                 }
 
-                finalChallengeParams = new FinalChallengeParams();
-                finalChallengeParams.appID = appID;
-                finalChallengeParams.challenge = authenticationRequest.getChallenge();
-                finalChallengeParams.facetID = facetId;
-                finalChallengeParams.channelBinding = gson.fromJson(channelBinding, ChannelBinding.class);
+                finalChallengeParams = new FinalChallengeParams(appID, authenticationRequest.getChallenge(), facetId, gson.fromJson(channelBinding, ChannelBinding.class));
+//                finalChallengeParams.appID = appID;
+//                finalChallengeParams.challenge = authenticationRequest.getChallenge();
+//                finalChallengeParams.facetID = facetId;
+//                finalChallengeParams.channelBinding = gson.fromJson(channelBinding, ChannelBinding.class);
 
                 GetAsmResponse response = FidoUafUtils.getAsmFromKeyId(mContext, appID, keyIds.toArray(new String[keyIds.size()]));
 
@@ -124,7 +132,7 @@ public class Authentication implements FacetIds {
                 }
 
                 ASMRequestAuth asmRequestAuth = new ASMRequestAuth();
-                asmRequestAuth.asmVersion = authenticationRequest.getHeader().upv;
+                asmRequestAuth.asmVersion = authenticationRequest.getHeader().getUpv();
                 asmRequestAuth.requestType = Request.Authenticate;
                 asmRequestAuth.authenticatorIndex = 0;
                 asmRequestAuth.args = authenticateIn;

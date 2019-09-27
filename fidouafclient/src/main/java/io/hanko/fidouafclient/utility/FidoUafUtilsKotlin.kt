@@ -10,10 +10,9 @@ import com.google.gson.Gson
 import io.hanko.fidouafclient.asm.AsmFingerprintActivity
 import io.hanko.fidouafclient.asm.AsmLockscreenActivity
 import io.hanko.fidouafclient.authenticator.config.AuthenticatorConfig
-import io.hanko.fidouafclient.authenticator.msgs.Authenticator
 import io.hanko.fidouafclient.client.msg.MatchCriteria
 import io.hanko.fidouafclient.client.msg.Policy
-import io.hanko.fidouafclient.client.msg.TrustedFacets.TrustedFacetsList
+import io.hanko.fidouafclient.client.msg.trustedFacets.TrustedFacetsList
 import io.hanko.fidouafclient.client.msg.Version
 import kotlinx.coroutines.*
 import java.io.ByteArrayInputStream
@@ -56,7 +55,7 @@ object FidoUafUtilsKotlin {
     fun isFacetIdValid(trustedFacetsJson: String, version: Version, facetId: String): Boolean {
         val trustedFacetList = Gson().fromJson(trustedFacetsJson, TrustedFacetsList::class.java)
 
-        return trustedFacetList.trustedFacets.filter { it.version == version }.any { it.ids.contains(facetId) }
+        return trustedFacetList.trustedFacets.filter { it.version == version }.any { it.ids?.contains(facetId) ?: false }
     }
 
     fun canEvaluatePolicy(context: Context, policy: Policy, appId: String): Boolean {
@@ -73,7 +72,7 @@ object FidoUafUtilsKotlin {
             }
         }.filterNotNull()
 
-        val disallowedAuthenticators = policy.disallowed.map { return@map getAuthenticatorFromMatchCriteria(it, context, appId) }.filterNotNull()
+        val disallowedAuthenticators = policy.disallowed?.map { return@map getAuthenticatorFromMatchCriteria(it, context, appId) }?.filterNotNull() ?: emptyList()
 
         // filter out all disallowed authenticators
         val filteredAuthenticators = (acceptedAuthenticators + disallowedAuthenticators)
@@ -92,12 +91,12 @@ object FidoUafUtilsKotlin {
         }
     }
 
-    fun canUseFingerprintAuthenticator(context: Context): Boolean {
+    private fun canUseFingerprintAuthenticator(context: Context): Boolean {
         val fingerprintManager: FingerprintManager? = context.getSystemService(FingerprintManager::class.java)
         return fingerprintManager != null && fingerprintManager.isHardwareDetected && fingerprintManager.hasEnrolledFingerprints()
     }
 
-    fun canUseLockscreenAuthenticator(context: Context): Boolean {
+    private fun canUseLockscreenAuthenticator(context: Context): Boolean {
         val keyguardManager: KeyguardManager? = context.getSystemService(KeyguardManager::class.java)
         return keyguardManager != null && keyguardManager.isDeviceSecure
     }
@@ -144,7 +143,7 @@ object FidoUafUtilsKotlin {
         }.filterNotNull().firstOrNull()
     }
 
-    fun getTrustedFacets(url: String): Deferred<String?> {
+    fun getTrustedFacetsAsync(url: String): Deferred<String?> {
         return ioScope.async {
             return@async withTimeoutOrNull(5000) {
                 return@withTimeoutOrNull Curl.get(url).payload

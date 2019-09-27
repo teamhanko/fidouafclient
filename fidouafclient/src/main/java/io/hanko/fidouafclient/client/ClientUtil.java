@@ -5,9 +5,6 @@ import android.os.Bundle;
 
 import java.util.Objects;
 
-import io.hanko.fidouafclient.authenticator.config.AuthenticatorConfig;
-import io.hanko.fidouafclient.client.msg.MatchCriteria;
-import io.hanko.fidouafclient.client.msg.Policy;
 import io.hanko.fidouafclient.client.msg.client.UAFIntentType;
 
 public class ClientUtil {

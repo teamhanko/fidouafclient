@@ -177,7 +177,7 @@ public class Auth {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         outputStream.write(UnsignedUtil.encodeInt(TagsEnum.TAG_TRANSACTION_CONTENT_HASH.id));
         if (transaction != null) {
-            byte[] value = SHA.sha(Base64.decode(transaction.content, Base64.URL_SAFE), "SHA-256");
+            byte[] value = SHA.sha(Base64.decode(transaction.getContent(), Base64.URL_SAFE), "SHA-256");
             outputStream.write(UnsignedUtil.encodeInt(value.length));
             outputStream.write(value);
         } else {

@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 
 import com.google.gson.Gson
@@ -27,10 +28,10 @@ import io.hanko.fidouafclient.client.msg.client.UAFMessage
 import io.hanko.fidouafclient.client.op.Authentication
 import io.hanko.fidouafclient.client.op.Deregistration
 import io.hanko.fidouafclient.client.op.Registration
-import io.hanko.fidouafclient.utility.ErrorCode
-import io.hanko.fidouafclient.utility.FidoUafUtils
-import io.hanko.fidouafclient.utility.FidoUafUtilsKotlin
+import io.hanko.fidouafclient.utility.*
 import java.lang.Exception
+
+data class V(val major: Int, val minor: Int)
 
 class MainActivity: AppCompatActivity(), AsmStart {
 
@@ -72,11 +73,12 @@ class MainActivity: AppCompatActivity(), AsmStart {
     }
 
     private fun processDiscoveryRequest() {
-        val discoveryData = DiscoveryData()
-        discoveryData.supportedUAFVersions = arrayOf(Version(1, 0), Version(1, 1))
-        discoveryData.clientVendor = "HANKO"
-        discoveryData.clientVersion = Version(1, 0)
-        discoveryData.availableAuthenticators = arrayOf( AuthenticatorConfig.authenticator_fingerprint, AuthenticatorConfig.authenticator_lockscreen )
+        val discoveryData = DiscoveryData(
+                listOf(Version(1, 0), Version(1, 1)),
+                "Hanko",
+                Version(1,0),
+                listOf(AuthenticatorConfig.authenticator_fingerprint, AuthenticatorConfig.authenticator_lockscreen)
+        )
 
         sendReturnIntent(UAFIntentType.DISCOVER_RESULT, ErrorCode.NO_ERROR, gson.toJson(discoveryData))
     }
@@ -95,12 +97,11 @@ class MainActivity: AppCompatActivity(), AsmStart {
                 Operation.Reg -> requests.filterIsInstance<UafRegistrationRequest>()[0].policy
                 Operation.Auth -> requests.filterIsInstance<UafAuthenticationRequest>()[0].policy
                 Operation.Dereg -> null
-                else -> null
             }
 
             when {
                 policy == null -> sendReturnIntent(UAFIntentType.CHECK_POLICY_RESULT, ErrorCode.NO_ERROR, null)
-                FidoUafUtilsKotlin.canEvaluatePolicy(this, policy, requests[0].header.appID) -> sendReturnIntent(UAFIntentType.CHECK_POLICY_RESULT, ErrorCode.NO_ERROR, null)
+                FidoUafUtilsKotlin.canEvaluatePolicy(this, policy, requests[0].header.appID ?: "") -> sendReturnIntent(UAFIntentType.CHECK_POLICY_RESULT, ErrorCode.NO_ERROR, null)
                 else -> sendReturnIntent(UAFIntentType.CHECK_POLICY_RESULT, ErrorCode.PROTOCOL_ERROR, null)
             }
         } else {
@@ -135,10 +136,15 @@ class MainActivity: AppCompatActivity(), AsmStart {
         }
     }
 
+    private fun validateUafRequests(requests: Array<UafRequest>): Boolean {
+        return requests.groupBy { V(it.header.upv.major, it.header.upv.major) }
+                .none { it.value.size > 1 }
+    }
+
     private fun processUafRequest(uafOperationMessage: String, channelBinding: String) {
 
         val request = parseUafOperationMessage(uafOperationMessage)
-        if (request.isEmpty()) {
+        if (request.isEmpty() || !validateUafRequests(request.filterIsInstance<UafRequest>().toTypedArray())) {
             sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
             return
         }
@@ -156,7 +162,6 @@ class MainActivity: AppCompatActivity(), AsmStart {
                 deregistrationProcess = Deregistration(this, this, facetId, channelBinding)
                 deregistrationProcess!!.processRequests(request.filterIsInstance<UafDeregistrationRequest>().toTypedArray())
             }
-            else -> sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
         }
 
 //        val requests = gson.fromJson(uafOperationMessage, Array<UafRequest>::class.java)
@@ -182,7 +187,13 @@ class MainActivity: AppCompatActivity(), AsmStart {
     }
 
     private fun parseUafOperationMessage(uafOperationMessage: String): Array<out UafRequest> {
-        val objectMapper = ObjectMapper().registerKotlinModule()
+        val objectMapper = ObjectMapper()
+                .registerKotlinModule()
+                .registerModule(
+                        SimpleModule()
+                                .addDeserializer(String::class.java, ForceStringDeserializer())
+                                .addDeserializer(Int::class.java, ForceIntDeserializer())
+                )
         val requests = objectMapper.readValue(uafOperationMessage, Array<UafRequest>::class.java)
         //val requests = gson.fromJson(uafOperationMessage, Array<UafRequest>::class.java)
         if (requests.isEmpty()) {
@@ -193,7 +204,6 @@ class MainActivity: AppCompatActivity(), AsmStart {
             Operation.Reg -> objectMapper.readValue(uafOperationMessage, Array<UafRegistrationRequest>::class.java)
             Operation.Auth -> objectMapper.readValue(uafOperationMessage, Array<UafAuthenticationRequest>::class.java)
             Operation.Dereg -> objectMapper.readValue(uafOperationMessage, Array<UafDeregistrationRequest>::class.java)
-            else -> emptyArray()
         }
     }
 
