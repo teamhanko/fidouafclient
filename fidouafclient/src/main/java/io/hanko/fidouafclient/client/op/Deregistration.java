@@ -41,7 +41,7 @@ public class Deregistration {
 
         for (UafDeregistrationRequest deregistrationRequest : deregistrationRequests) {
             for (DeregisterAuthenticator deregisterAuthenticator : deregistrationRequest.getAuthenticators()) {
-                if (Objects.equals(deregisterAuthenticator.getAaid(), AuthenticatorConfig.authenticator_fingerprint.aaid) || Objects.equals(deregisterAuthenticator.getAaid(), AuthenticatorConfig.authenticator_lockscreen.aaid)) {
+                if (Objects.equals(deregisterAuthenticator.getAaid(), AuthenticatorConfig.INSTANCE.getAuthenticator().getAaid())) {
                     keyId = deregisterAuthenticator.getKeyID();
                     aaid = deregisterAuthenticator.getAaid();
                 }

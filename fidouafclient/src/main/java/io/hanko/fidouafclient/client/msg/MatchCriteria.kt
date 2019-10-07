@@ -1,33 +1,65 @@
 package io.hanko.fidouafclient.client.msg
 
 import android.content.Context
+import android.util.Base64
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.hanko.fidouafclient.authenticator.config.AuthenticatorConfig
 import io.hanko.fidouafclient.authenticator.msgs.Authenticator
 import io.hanko.fidouafclient.utility.Preferences
+import java.lang.Exception
 
 class MatchCriteria
 (
-        val aaid: List<String>?,
-        val vendorID: List<String>?,
-        val keyIDs: List<String>?,
-        val userVerification: Long?,
-        val keyProtection: Int?,
-        val matcherProtection: Int?,
-        val attachmentHint: Long?,
-        val tcDisplay: Int?,
-        val authenticationAlgorithms: List<Int>?,
-        val assertionSchemes: List<String>?,
-        val attestationTypes: List<Int>?,
-        val authenticatorVersion: Int?,
-        val exts: List<Extension>?
+        @JsonProperty(required = false) val aaid: List<String>? = null,
+        @JsonProperty(required = false) val vendorID: List<String>? = null,
+        @JsonProperty(required = false) val keyIDs: List<String>? = null,
+        @JsonProperty(required = false) val userVerification: Long? = null,
+        @JsonProperty(required = false) val keyProtection: Int? = null,
+        @JsonProperty(required = false) val matcherProtection: Int? = null,
+        @JsonProperty(required = false) val attachmentHint: Long? = null,
+        @JsonProperty(required = false) val tcDisplay: Int? = null,
+        @JsonProperty(required = false) val authenticationAlgorithms: List<Int>? = null,
+        @JsonProperty(required = false) val assertionSchemes: List<String>? = null,
+        @JsonProperty(required = false) val attestationTypes: List<Int>? = null,
+        @JsonProperty(required = false) val authenticatorVersion: Int? = null,
+        @JsonProperty(required = false) val exts: List<Extension>? = null
 ) {
 
-    fun matchesAuthenticator(authenticator: Authenticator, context: Context, appId: String): Boolean {
-        if ((aaid != null && aaid[0] != authenticator.aaid) || (aaid != null && aaid.size != 1)) {
+    fun isValid(): Boolean {
+        if (exts != null && exts.any { it.id.length > 32 || it.id.isEmpty() }) {
             return false
         }
 
-        if ((vendorID != null && vendorID[0] != authenticator.aaid.split("#")[0]) || (vendorID != null && vendorID.size != 1)) {
+        if (aaid == null) {
+            if (authenticationAlgorithms == null || assertionSchemes == null) {
+                return false
+            }
+        }
+
+        if (aaid != null) {
+            return vendorID == null &&
+            userVerification == null &&
+            keyProtection == null &&
+            matcherProtection == null &&
+            tcDisplay == null &&
+            authenticationAlgorithms == null &&
+            assertionSchemes == null &&
+            attestationTypes == null
+        }
+
+        if (keyIDs != null) {
+            return keyIDs.all { isKeyIdValid(it) }
+        }
+
+        return true
+    }
+
+    fun matchesAuthenticator(authenticator: Authenticator, context: Context, appId: String): Boolean {
+        if ((aaid != null && aaid.size != 1) || (aaid != null && aaid[0] != authenticator.aaid)) {
+            return false
+        }
+
+        if ((vendorID != null && vendorID.size != 1) || (vendorID != null && vendorID[0] != authenticator.aaid.split("#")[0])) {
             return false
         }
 
@@ -71,14 +103,22 @@ class MatchCriteria
     }
 
     private fun isKeyIdRegisteredForAuthenticator(context: Context, keyIDs: List<String>?, aaid: String, appId: String): Boolean {
-        if (keyIDs == null || keyIDs.isEmpty()) {
+        if (keyIDs == null || keyIDs.isEmpty() || keyIDs.none { isKeyIdValid(it) }) {
             return false
         }
 
-        val preferenceName = if (aaid == AuthenticatorConfig.authenticator_fingerprint.aaid) Preferences.FINGERPRINT_PREFERENCE else Preferences.LOCKSCREEN_PREFERENCE
+        val preferenceName = if (aaid == AuthenticatorConfig.authenticator.aaid) Preferences.FINGERPRINT_PREFERENCE else Preferences.LOCKSCREEN_PREFERENCE
         val sharedPreferences = Preferences.create(context, preferenceName)
         val registeredKeyIds = Preferences.getParamSet(sharedPreferences, appId)
 
         return registeredKeyIds.any { keyIDs.contains(it) }
+    }
+
+    private fun isKeyIdValid(keyId: String): Boolean {
+        return try {
+            Base64.decode(keyId, Base64.URL_SAFE).isNotEmpty()
+        } catch (ex: Exception) {
+            false
+        }
     }
 }

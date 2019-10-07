@@ -6,6 +6,7 @@ import android.os.Binder
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
@@ -59,7 +60,7 @@ class MainActivity: AppCompatActivity(), AsmStart {
         val callingIntent = intent
         val extras = callingIntent.extras
 
-        facetId = FidoUafUtils.getFacetID(applicationContext, Binder.getCallingUid())
+        facetId = FidoUafUtils.getFacetIDWithName(applicationContext, callingActivity!!.packageName)
         if (ClientUtil.validateRequestIntent(callingIntent)) {
             try {
                 processUafRequest(extras)
@@ -77,7 +78,7 @@ class MainActivity: AppCompatActivity(), AsmStart {
                 listOf(Version(1, 0), Version(1, 1)),
                 "Hanko",
                 Version(1,0),
-                listOf(AuthenticatorConfig.authenticator_fingerprint, AuthenticatorConfig.authenticator_lockscreen)
+                listOf(AuthenticatorConfig.authenticator)
         )
 
         sendReturnIntent(UAFIntentType.DISCOVER_RESULT, ErrorCode.NO_ERROR, gson.toJson(discoveryData))
@@ -138,7 +139,13 @@ class MainActivity: AppCompatActivity(), AsmStart {
 
     private fun validateUafRequests(requests: Array<UafRequest>): Boolean {
         return requests.groupBy { V(it.header.upv.major, it.header.upv.major) }
-                .none { it.value.size > 1 }
+                .none { it.value.size > 1 } && // check that only 1 request per version exists
+                requests.none { it.header.serverData?.length ?: 0 > 1536 || it.header.serverData?.length ?: 1 < 1 } && // check that serverData length is not larger than 1536 and not smaller than 1 if it exists
+                requests.none { it.header.exts?.any { it.id.length > 32 || it.id.isEmpty() } ?: false }
+    }
+
+    private fun validateExtensions(requests: Array<UafRequest>): Boolean {
+        return requests.none { it.header.exts?.any { !AuthenticatorConfig.authenticator.supportedExtensionIDs.contains(it.id) && it.fail_if_unknown } ?: false }
     }
 
     private fun processUafRequest(uafOperationMessage: String, channelBinding: String) {
@@ -149,10 +156,20 @@ class MainActivity: AppCompatActivity(), AsmStart {
             return
         }
 
+        if (!validateExtensions(request.filterIsInstance<UafRequest>().toTypedArray())) {
+            sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.UNKNOWN, null)
+            return
+        }
+
+        if (facetId == null) {
+            sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.UNKNOWN, null)
+            return
+        }
+
         when(request[0].header.op) {
             Operation.Reg -> {
-                registrationProcess = Registration(this, this, facetId, channelBinding)
-                registrationProcess!!.processRequests(request.filterIsInstance<UafRegistrationRequest>().toTypedArray())
+                registrationProcess = Registration(this, this, facetId!!, channelBinding)
+                registrationProcess!!.processRequests(request.filterIsInstance<UafRegistrationRequest>())
             }
             Operation.Auth -> {
                 authenticationProcess = Authentication(this, this, facetId, channelBinding)
@@ -193,9 +210,12 @@ class MainActivity: AppCompatActivity(), AsmStart {
                         SimpleModule()
                                 .addDeserializer(String::class.java, ForceStringDeserializer())
                                 .addDeserializer(Int::class.java, ForceIntDeserializer())
+                                .addDeserializer(Long::class.java, ForceLongDeserializer())
+                                .addDeserializer(MatchCriteria::class.java, MatchCriteriaDeserializer())
                 )
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+
         val requests = objectMapper.readValue(uafOperationMessage, Array<UafRequest>::class.java)
-        //val requests = gson.fromJson(uafOperationMessage, Array<UafRequest>::class.java)
         if (requests.isEmpty()) {
             return emptyArray()
         }

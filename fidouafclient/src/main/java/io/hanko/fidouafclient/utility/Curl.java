@@ -32,7 +32,7 @@ import java.security.NoSuchAlgorithmException;
 
 public class Curl {
 
-    private static final int CONNECTION_TIMEOUT = 20000;
+    private static final int CONNECTION_TIMEOUT = 2000;
     private static final int READ_TIMEOUT = 20000;
     private static final String CONTENT_TYPE_HEADER = "Content-Type";
     private static final String CONTENT_TYPE = "application/json";

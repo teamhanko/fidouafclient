@@ -6,6 +6,10 @@ import android.content.pm.PackageManager
 import android.hardware.fingerprint.FingerprintManager
 import android.util.Base64
 import android.util.Log
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.google.gson.Gson
 import io.hanko.fidouafclient.asm.AsmFingerprintActivity
 import io.hanko.fidouafclient.asm.AsmLockscreenActivity
@@ -17,6 +21,7 @@ import io.hanko.fidouafclient.client.msg.Version
 import kotlinx.coroutines.*
 import java.io.ByteArrayInputStream
 import java.lang.Exception
+import java.net.URL
 import java.security.MessageDigest
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
@@ -25,6 +30,14 @@ object FidoUafUtilsKotlin {
 
     private val TAG = "FidoUafUtils"
     private val ioScope = CoroutineScope(Dispatchers.IO + Job())
+    private val objectMapper = ObjectMapper()
+            .registerKotlinModule()
+            .registerModule(
+                    SimpleModule()
+                            .addDeserializer(String::class.java, ForceStringDeserializer())
+                            .addDeserializer(Int::class.java, ForceIntDeserializer())
+            )
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     fun getFacetId(context: Context, callingUid: Int): String? {
         val packageNames: Array<String> = context.packageManager.getPackagesForUid(callingUid)
@@ -53,9 +66,16 @@ object FidoUafUtilsKotlin {
     }
 
     fun isFacetIdValid(trustedFacetsJson: String, version: Version, facetId: String): Boolean {
-        val trustedFacetList = Gson().fromJson(trustedFacetsJson, TrustedFacetsList::class.java)
+        return try {
+            val trustedFacetList = objectMapper.readValue(trustedFacetsJson, TrustedFacetsList::class.java)
+            //Gson().fromJson(trustedFacetsJson, TrustedFacetsList::class.java)
 
-        return trustedFacetList.trustedFacets.filter { it.version == version }.any { it.ids?.contains(facetId) ?: false }
+            trustedFacetList.trustedFacets.filter { it.version == version }.any {
+                it.ids?.contains(facetId) ?: false
+            }
+        } catch (ex: Exception) {
+            false
+        }
     }
 
     fun canEvaluatePolicy(context: Context, policy: Policy, appId: String): Boolean {
@@ -85,8 +105,7 @@ object FidoUafUtilsKotlin {
 
     private fun getAuthenticatorFromMatchCriteria(matchCriteria: MatchCriteria, context: Context, appId: String): String? {
         return when {
-            matchCriteria.matchesAuthenticator(AuthenticatorConfig.authenticator_fingerprint, context, appId) && canUseFingerprintAuthenticator(context) -> AuthenticatorConfig.authenticator_fingerprint.aaid
-            matchCriteria.matchesAuthenticator(AuthenticatorConfig.authenticator_lockscreen, context, appId) && canUseLockscreenAuthenticator(context) -> AuthenticatorConfig.authenticator_lockscreen.aaid
+            matchCriteria.matchesAuthenticator(AuthenticatorConfig.authenticator, context, appId) && canUseFingerprintAuthenticator(context) -> AuthenticatorConfig.authenticator.aaid
             else -> null
         }
     }
@@ -119,12 +138,12 @@ object FidoUafUtilsKotlin {
 
     private fun isFingerprint(context: Context, aaid: String): Boolean {
         val fingerprintManager: FingerprintManager? = context.getSystemService(FingerprintManager::class.java)
-        return aaid == AuthenticatorConfig.authenticator_fingerprint.aaid && fingerprintManager != null && fingerprintManager.isHardwareDetected && fingerprintManager.hasEnrolledFingerprints()
+        return aaid == AuthenticatorConfig.authenticator.aaid && fingerprintManager != null && fingerprintManager.isHardwareDetected && fingerprintManager.hasEnrolledFingerprints()
     }
 
     private fun isLockscreen(context: Context, aaid: String): Boolean {
         val keyguardManager: KeyguardManager? = context.getSystemService(KeyguardManager::class.java)
-        return aaid == AuthenticatorConfig.authenticator_lockscreen.aaid && keyguardManager != null && keyguardManager.isDeviceSecure
+        return aaid == AuthenticatorConfig.authenticator.aaid && keyguardManager != null && keyguardManager.isDeviceSecure
     }
 
     fun getAsmFromKeyId(context: Context, appId: String, keyIds: Array<String>): GetAsmResponse? {
@@ -143,11 +162,20 @@ object FidoUafUtilsKotlin {
         }.filterNotNull().firstOrNull()
     }
 
-    fun getTrustedFacetsAsync(url: String): Deferred<String?> {
-        return ioScope.async {
-            return@async withTimeoutOrNull(5000) {
-                return@withTimeoutOrNull Curl.get(url).payload
-            }
+    suspend fun getTrustedFacetsAsync(url: String): String? {
+//        return ioScope.async {
+//            return@async withTimeoutOrNull(5000) {
+////                return@withTimeoutOrNull Curl.get(url).payload
+//                return@withTimeoutOrNull URL(url).readText()
+//            }
+            //yield()
+            //return@async result
+
+        return withTimeoutOrNull(5000) {
+            return@withTimeoutOrNull ioScope.async {
+                Log.w(TAG, "Get TrustedFacetList from $url")
+                return@async URL(url).readText()
+            }.await()
         }
     }
 }

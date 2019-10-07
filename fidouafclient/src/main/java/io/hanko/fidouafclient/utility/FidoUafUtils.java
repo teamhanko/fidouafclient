@@ -62,6 +62,27 @@ public class FidoUafUtils {
         return null;
     }
 
+    public static String getFacetIDWithName(Context aContext, String packageName) {
+        try {
+            PackageInfo info = aContext.getPackageManager().getPackageInfo(packageName, PackageManager.GET_SIGNATURES);
+
+            byte[] cert = info.signatures[0].toByteArray();
+            InputStream input = new ByteArrayInputStream(cert);
+
+            CertificateFactory cf = CertificateFactory.getInstance("X509");
+            X509Certificate c = (X509Certificate) cf.generateCertificate(input);
+
+            MessageDigest md = MessageDigest.getInstance("SHA1");
+
+            return "android:apk-key-hash:" +
+                    Base64.encodeToString(md.digest(c.getEncoded()), Base64.DEFAULT | Base64.NO_WRAP | Base64.NO_PADDING);
+        } catch (PackageManager.NameNotFoundException | CertificateException | NoSuchAlgorithmException e) {
+            Log.e(TAG, "Error while getting FacetID", e);
+        }
+
+        return null;
+    }
+
     public static boolean isFacetIdValid(String trustedFacetsJson, Version version, String appFacetId) {
         try {
             TrustedFacetsList trustedFacetsList = (new Gson()).fromJson(trustedFacetsJson, TrustedFacetsList.class);
@@ -148,12 +169,12 @@ public class FidoUafUtils {
 
     private static boolean isFingerprint(Context context, String aaid) {
         FingerprintManager fingerprintManager = (FingerprintManager) context.getSystemService(Context.FINGERPRINT_SERVICE);
-        return Objects.equals(aaid, AuthenticatorConfig.authenticator_fingerprint.aaid) && fingerprintManager.hasEnrolledFingerprints() && fingerprintManager.isHardwareDetected();
+        return Objects.equals(aaid, AuthenticatorConfig.INSTANCE.getAuthenticator().getAaid()) && fingerprintManager.hasEnrolledFingerprints() && fingerprintManager.isHardwareDetected();
     }
 
     private static boolean isLockscreen(Context context, String aaid) {
         KeyguardManager keyguardManager = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
-        return Objects.equals(aaid, AuthenticatorConfig.authenticator_lockscreen.aaid) && keyguardManager.isDeviceSecure();
+        return Objects.equals(aaid, AuthenticatorConfig.INSTANCE.getAuthenticator().getAaid()) && keyguardManager.isDeviceSecure();
     }
 
     public static GetAsmResponse getAsmFromKeyId(Context context, String appId, String[] keyIds) {

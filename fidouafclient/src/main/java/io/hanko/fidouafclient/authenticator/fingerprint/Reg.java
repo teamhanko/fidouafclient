@@ -115,7 +115,7 @@ public class Reg {
     private byte[] getAaidTag() throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         outputStream.write(UnsignedUtil.encodeInt(TagsEnum.TAG_AAID.id));
-        byte[] value = AuthenticatorConfig.authenticator_fingerprint.aaid.getBytes();
+        byte[] value = AuthenticatorConfig.INSTANCE.getAuthenticator().getAaid().getBytes();
         outputStream.write(UnsignedUtil.encodeInt(value.length));
         outputStream.write(value);
 
@@ -166,11 +166,11 @@ public class Reg {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         outputStream.write(UnsignedUtil.encodeInt(TagsEnum.TAG_ASSERTION_INFO.id));
         // all values in littleEndian-format
-        // 2 byte = Vendor assigned authenticator_fingerprint version
-        // 1 byte = For Registration this must be 0x01 indicating that the user has explicitly verified the action.
-        // 2 byte = Signature Algorithm and Encoding of the attestation signature.
-        // 2 byte = Public Key algorithm and encoding of the newly generated UAuth.pub key.
-        byte[] value = {0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x00};
+        // 2 byte = Vendor assigned authenticator_fingerprint version // 0x00 0x01
+        // 1 byte = For Registration this must be 0x01 indicating that the user has explicitly verified the action. // 0x01
+        // 2 byte = Signature Algorithm and Encoding of the attestation signature. // 0x00 0x01 = 1
+        // 2 byte = Public Key algorithm and encoding of the newly generated UAuth.pub key. // 0x01 0x01 = 257
+        byte[] value = {0x01, 0x00, 0x01, 0x02, 0x00, 0x01, 0x01};
         outputStream.write(UnsignedUtil.encodeInt(value.length));
         outputStream.write(value);
 

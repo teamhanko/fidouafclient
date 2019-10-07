@@ -95,7 +95,7 @@ public class AsmFingerprintActivity extends AppCompatActivity implements Fingerp
 
         if (asmRequest.requestType == Request.GetInfo) {
             ASMResponseGetInfo asmResponseGetInfo = new ASMResponseGetInfo();
-            asmResponseGetInfo.responseData = new GetInfoOut(AuthenticatorInfo.fromAuthenticator(AuthenticatorConfig.authenticator_fingerprint, mFingerprintManager.hasEnrolledFingerprints()));
+            asmResponseGetInfo.responseData = new GetInfoOut(AuthenticatorInfo.Companion.fromAuthenticator(AuthenticatorConfig.INSTANCE.getAuthenticator(), mFingerprintManager.hasEnrolledFingerprints()));
 
             sendResponse(gson.toJson(asmResponseGetInfo));
             finish();

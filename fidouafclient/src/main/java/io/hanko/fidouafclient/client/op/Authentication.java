@@ -53,7 +53,7 @@ public class Authentication implements FacetIds {
 
     public void processRequests(final UafAuthenticationRequest[] authenticationRequests) {
         for (UafAuthenticationRequest authReq : authenticationRequests) {
-            if (authReq.getHeader().getUpv().getMajor() == 1 && authReq.getHeader().getUpv().getMinor() == 0) {
+            if (authReq.getHeader().getUpv().getMajor() == 1 && authReq.getHeader().getUpv().getMinor() == 1) {
                 authenticationRequest = authReq;
                 break;
             }
@@ -63,11 +63,11 @@ public class Authentication implements FacetIds {
         }
 
         if (authenticationRequest == null) {
-            activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null);
+            activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.UNSUPPORTED_VERSION, null);
         } else if (authenticationRequest.getHeader().getAppID() == null || authenticationRequest.getHeader().getAppID().isEmpty() || Objects.equals(authenticationRequest.getHeader().getAppID(), facetId)) {
             appID = facetId;
             sendToAsm(true);
-        } else if (authenticationRequest.getHeader().getAppID().contains("https://")){
+        } else if (authenticationRequest.getHeader().getAppID().contains("https://")) {
             appID = authenticationRequest.getHeader().getAppID();
             FidoUafUtils.GetTrustedFacetsTask getTrustedFacetsTask = new FidoUafUtils.GetTrustedFacetsTask(this);
             getTrustedFacetsTask.execute(authenticationRequest.getHeader().getAppID());

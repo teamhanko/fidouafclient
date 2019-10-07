@@ -122,7 +122,7 @@ public class Reg {
     private byte[] getAaidTag() throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         outputStream.write(UnsignedUtil.encodeInt(TagsEnum.TAG_AAID.id));
-        byte[] value = AuthenticatorConfig.authenticator_lockscreen.aaid.getBytes();
+        byte[] value = AuthenticatorConfig.INSTANCE.getAuthenticator().getAaid().getBytes();
         outputStream.write(UnsignedUtil.encodeInt(value.length));
         outputStream.write(value);
 
