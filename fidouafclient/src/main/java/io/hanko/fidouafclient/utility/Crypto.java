@@ -1,18 +1,15 @@
 package io.hanko.fidouafclient.utility;
 
-import android.content.Context;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Build;
-import android.security.KeyPairGeneratorSpec;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
-import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.util.Base64;
 import android.util.Log;
 
+import androidx.annotation.Nullable;
+
 import java.io.IOException;
-import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPairGenerator;
@@ -29,9 +26,6 @@ import java.security.SignatureException;
 import java.security.UnrecoverableEntryException;
 import java.security.cert.CertificateException;
 import java.security.spec.ECGenParameterSpec;
-import java.util.Calendar;
-
-import javax.security.auth.x500.X500Principal;
 
 public class Crypto {
 

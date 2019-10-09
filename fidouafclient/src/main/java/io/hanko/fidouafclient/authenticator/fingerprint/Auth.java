@@ -3,8 +3,6 @@ package io.hanko.fidouafclient.authenticator.fingerprint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.hardware.fingerprint.FingerprintManager;
-import android.os.Build;
-import android.support.annotation.RequiresApi;
 import android.util.Base64;
 import android.util.Log;
 

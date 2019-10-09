@@ -5,11 +5,11 @@ import android.app.AlertDialog;
 import android.app.KeyguardManager;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.gson.Gson;
 
@@ -109,6 +109,7 @@ public class AsmLockscreenActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == REQUEST_CODE_CONFIRM_DEVICE_CREDENTIALS) {
             if(resultCode == RESULT_OK) {
                 if(asmRequest.requestType == Request.Register) {

@@ -37,14 +37,16 @@ class MatchCriteria
         }
 
         if (aaid != null) {
-            return vendorID == null &&
-            userVerification == null &&
-            keyProtection == null &&
-            matcherProtection == null &&
-            tcDisplay == null &&
-            authenticationAlgorithms == null &&
-            assertionSchemes == null &&
-            attestationTypes == null
+            if (vendorID != null ||
+            userVerification != null ||
+            keyProtection != null ||
+            matcherProtection != null ||
+            tcDisplay != null ||
+            authenticationAlgorithms != null ||
+            assertionSchemes != null ||
+            attestationTypes != null) {
+                return false
+            }
         }
 
         if (keyIDs != null) {
@@ -116,7 +118,7 @@ class MatchCriteria
 
     private fun isKeyIdValid(keyId: String): Boolean {
         return try {
-            Base64.decode(keyId, Base64.URL_SAFE).isNotEmpty()
+            Base64.decode(keyId, Base64.URL_SAFE).isNotEmpty() && !keyId.contains("/") && !keyId.contains("+")
         } catch (ex: Exception) {
             false
         }

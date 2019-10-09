@@ -20,7 +20,9 @@ import io.hanko.fidouafclient.client.msg.trustedFacets.TrustedFacetsList
 import io.hanko.fidouafclient.client.msg.Version
 import kotlinx.coroutines.*
 import java.io.ByteArrayInputStream
+import java.io.InputStream
 import java.lang.Exception
+import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
 import java.security.cert.CertificateFactory
@@ -70,10 +72,11 @@ object FidoUafUtilsKotlin {
             val trustedFacetList = objectMapper.readValue(trustedFacetsJson, TrustedFacetsList::class.java)
             //Gson().fromJson(trustedFacetsJson, TrustedFacetsList::class.java)
 
-            trustedFacetList.trustedFacets.filter { it.version == version }.any {
+            trustedFacetList.trustedFacets.filter { it.version?.major == version.major && it.version.minor == version.minor }.any {
                 it.ids?.contains(facetId) ?: false
             }
         } catch (ex: Exception) {
+            Log.w(TAG, "could not validate FacetId", ex)
             false
         }
     }
@@ -90,9 +93,9 @@ object FidoUafUtilsKotlin {
             } else {
                 return@map null
             }
-        }.filterNotNull()
+        }.filterNotNull().groupBy { it }.keys
 
-        val disallowedAuthenticators = policy.disallowed?.map { return@map getAuthenticatorFromMatchCriteria(it, context, appId) }?.filterNotNull() ?: emptyList()
+        val disallowedAuthenticators = (policy.disallowed?.map { return@map getAuthenticatorFromMatchCriteria(it, context, appId) }?.filterNotNull() ?: emptyList()).groupBy { it }.keys
 
         // filter out all disallowed authenticators
         val filteredAuthenticators = (acceptedAuthenticators + disallowedAuthenticators)
@@ -163,19 +166,64 @@ object FidoUafUtilsKotlin {
     }
 
     suspend fun getTrustedFacetsAsync(url: String): String? {
-//        return ioScope.async {
-//            return@async withTimeoutOrNull(5000) {
-////                return@withTimeoutOrNull Curl.get(url).payload
-//                return@withTimeoutOrNull URL(url).readText()
-//            }
-            //yield()
-            //return@async result
-
         return withTimeoutOrNull(5000) {
             return@withTimeoutOrNull ioScope.async {
                 Log.w(TAG, "Get TrustedFacetList from $url")
-                return@async URL(url).readText()
+//                return@async URL(url).readText()
+                return@async getTrustedFacetList(url)
             }.await()
         }
+    }
+
+    private suspend fun getTrustedFacetList(url: String): String? {
+        val urlConnection = createConnection(url)
+        return getTrustedFacetList(urlConnection)
+    }
+
+    private suspend fun getTrustedFacetList(urlConnection: HttpURLConnection, count: Int = 0): String? {
+        try {
+            val httpStatusCode = urlConnection.responseCode
+            Log.w(TAG, "HttpStatusCode: $httpStatusCode")
+            return if ((httpStatusCode == HttpURLConnection.HTTP_MOVED_PERM
+                            || httpStatusCode == HttpURLConnection.HTTP_MOVED_TEMP
+                            || httpStatusCode == HttpURLConnection.HTTP_SEE_OTHER)
+                    && count < 5) { // redirect only if http status code indicates redirect and follow redirect only 5 times, so we can't get stuck in a redirect loop
+                val redirectAuthorizationHeader = urlConnection.getHeaderField("FIDO-AppID-Redirect-Authorized")?.toBoolean()
+                if (redirectAuthorizationHeader == true) {
+                    val newUrl = urlConnection.getHeaderField("Location")
+                    val newConnection = createConnection(newUrl)
+                    getTrustedFacetList(newConnection, count + 1)
+                } else {
+                    null
+                }
+            } else if (httpStatusCode == HttpURLConnection.HTTP_OK || httpStatusCode == HttpURLConnection.HTTP_CREATED) {
+                readStream(urlConnection.inputStream)
+            } else {
+                null
+            }
+        } catch (ex: Exception) {
+            return null
+        } finally {
+            urlConnection.disconnect()
+        }
+    }
+
+    private fun readStream(stream: InputStream): String {
+        return stream.bufferedReader().use { it.readText() }
+    }
+
+    private suspend fun createConnection(urlString: String, method: String = "GET", output: Boolean = false): HttpURLConnection {
+        val url = URL(urlString)
+        val urlConnection = url.openConnection() as HttpURLConnection
+        urlConnection.doOutput = output
+        urlConnection.requestMethod = method
+        urlConnection.useCaches = false
+        urlConnection.connectTimeout = 1000
+        urlConnection.readTimeout = 1000
+        urlConnection.setRequestProperty("Content-Type", "application/json")
+        urlConnection.instanceFollowRedirects = false
+        urlConnection.connect()
+
+        return urlConnection
     }
 }

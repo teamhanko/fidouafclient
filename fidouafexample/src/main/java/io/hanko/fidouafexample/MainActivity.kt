@@ -2,8 +2,8 @@ package io.hanko.fidouafexample
 
 import android.content.Intent
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
@@ -17,6 +17,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
+import java.lang.Exception
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,8 +31,8 @@ class MainActivity : AppCompatActivity() {
     private val keyId = "RCFnd69x3DuooocFPxiCNW97BSCnxK1ECBh8-YtS3NM"
     private val uafAuthenticateRequest = "{\"uafProtocolMessage\":\"[{\\\"header\\\":{\\\"upv\\\":{\\\"major\\\":1,\\\"minor\\\":0},\\\"appID\\\":\\\"https:\\/\\/example.com\\\",\\\"op\\\":\\\"Auth\\\"},\\\"challenge\\\":\\\"rNmfRjYqwu97rFeYwGNDyPsv2c3D0J8VFyIurvvIxO0F\\\",\\\"policy\\\":{\\\"accepted\\\":[[{\\\"aaid\\\":[\\\"0018#0001\\\"]}],[{\\\"aaid\\\":[\\\"C3C3#0001\\\"]}],[{\\\"aaid\\\":[\\\"C3C3#0002\\\"]}],[{\\\"aaid\\\":[\\\"C3C3#0003\\\"]}],[{\\\"aaid\\\":[\\\"A4A4#0001\\\"]}],[{\\\"aaid\\\":[\\\"A4A4#0001\\\"],\\\"keyIDs\\\":[\\\"<keyid>\\\"]}], [{\\\"aaid\\\":[\\\"A4A4#0003\\\"],\\\"keyIDs\\\":[\\\"<keyid>\\\"]}]],\\\"disallowed\\\":[{\\\"aaid\\\":[\\\"FFFF#FFFF\\\"]}]}}]\"}"
 
-    private val matchCriteriaString_P1 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"https://uaf.example.com\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"aaid\": [\"A4A4#0001\"]}]]}}]"
-    private val matchCriteriaString_P2 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"https://uaf.example.com\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"authenticationAlgorithms\": [1], \"assertionSchemes\":[\"UAFV1TLV\"]}]]}}]"
+    private val matchCriteriaString_P1 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"aaid\": [\"A4A4#0001\"]}], [{\"authenticationAlgorithms\": [2], \"assertionSchemes\":[\"UAFV1TLV\"]}]]}}]"
+    private val matchCriteriaString_P2 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"authenticationAlgorithms\": [1], \"assertionSchemes\":[\"UAFV1TLV\"]}]]}}]"
     private val matchCriteriaString_F1_1 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"https://uaf.example.com\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": {}}}]"
     private val matchCriteriaString_F1_2 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"https://uaf.example.com\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": null}}]"
     private val matchCriteriaString_F1_3 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"https://uaf.example.com\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": []}}]"
@@ -60,9 +61,9 @@ class MainActivity : AppCompatActivity() {
     private val matchCriteriaString_F24 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"https://uaf.example.com\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"aaid\":[\"A4A4#0001\"], \"authenticatorVersion\":\"42\"}]]}}]"
     private val matchCriteriaString_F25 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"https://uaf.example.com\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"aaid\":[\"A4A4#0001\"], \"exts\":{}}]]}}]"
     private val matchCriteriaString_F26 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"https://uaf.example.com\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"aaid\":[\"A4A4#0001\"], \"exts\":[[],{\"id\":\"unknown-id\",\"data\":\"\",\"fail_if_unknown\":false}]}]]}}]"
-    private val matchCriteriaString_P28 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"aaid\": [\"A4A4#0001\"], \"assertionSchemes\": [\"UAFV1TLV\"]}]]}}]"
-    private val matchCriteriaString_P29 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"assertionSchemes\": [\"UAFV1TLV\"]}]]}}]"
-    private val matchCriteriaString_P30 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"authenticationAlgorithms\": [2]}]]}}]"
+    private val matchCriteriaString_F28 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"aaid\": [\"A4A4#0001\"], \"assertionSchemes\": [\"UAFV1TLV\"]}]]}}]"
+    private val matchCriteriaString_F29 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"assertionSchemes\": [\"UAFV1TLV\"]}]]}}]"
+    private val matchCriteriaString_F30 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"authenticationAlgorithms\": [2]}]]}}]"
 
     private val extensionString_P1 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1} ,\"exts\": [{\"id\": \"unknown_id\", \"data\": \"\", \"fail_if_unknown\": false}],\"op\": \"Reg\",\"appID\": \"https://uaf.example.com\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"aaid\": [\"A4A4#0001\"]}]]}}]"
 
@@ -74,7 +75,7 @@ class MainActivity : AppCompatActivity() {
         buttonAuthenticate.setOnClickListener { startFidoClient(uafAuthenticateRequest.replace("<keyid>", keyId)); }
 
 //        testDeserialization()
-//        startFidoClient("{\"uafProtocolMessage\": \"${matchCriteriaString_P30.replace("\"", "\\\"")}\"}")
+//        startFidoClient("{\"uafProtocolMessage\": \"${matchCriteriaString_P1.replace("\"", "\\\"")}\"}")
     }
 
     private fun testDeserialization() {

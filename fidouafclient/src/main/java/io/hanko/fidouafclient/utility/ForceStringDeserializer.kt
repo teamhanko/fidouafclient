@@ -1,7 +1,6 @@
 package io.hanko.fidouafclient.utility
 
 import android.util.Base64
-import android.util.Log
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.*
@@ -13,7 +12,7 @@ import java.lang.Exception
 
 class ForceStringDeserializer : JsonDeserializer<String>() {
     override fun deserialize(jsonParser: JsonParser?, ctxt: DeserializationContext?): String {
-        Log.w("StringDeserializer", "Name: ${jsonParser?.currentName} - ValueType: ${jsonParser?.currentToken} - Value: ${jsonParser?.valueAsString}")
+
         if (jsonParser?.currentToken == JsonToken.VALUE_NUMBER_INT ||
             jsonParser?.currentToken == JsonToken.VALUE_NULL ||
             jsonParser?.currentToken == JsonToken.VALUE_NUMBER_FLOAT ||
@@ -29,7 +28,7 @@ class ForceStringDeserializer : JsonDeserializer<String>() {
 
 class ForceIntDeserializer : JsonDeserializer<Int>() {
     override fun deserialize(jsonParser: JsonParser?, ctxt: DeserializationContext?): Int {
-        Log.w("IntDeserializer", "Name: ${jsonParser?.currentName} - ValueType: ${jsonParser?.currentToken} - Value: ${jsonParser?.valueAsString}")
+
         if (jsonParser?.currentToken == JsonToken.VALUE_STRING ||
             jsonParser?.currentToken == JsonToken.VALUE_EMBEDDED_OBJECT ||
             jsonParser?.currentToken == JsonToken.VALUE_TRUE ||
@@ -44,7 +43,7 @@ class ForceIntDeserializer : JsonDeserializer<Int>() {
 
 class ForceLongDeserializer : JsonDeserializer<Long>() {
     override fun deserialize(jsonParser: JsonParser?, ctxt: DeserializationContext?): Long {
-        Log.w("LongDeserializer", "Name: ${jsonParser?.currentName} - ValueType: ${jsonParser?.currentToken} - Value: ${jsonParser?.valueAsString}")
+
         if (jsonParser?.currentToken == JsonToken.VALUE_STRING ||
                 jsonParser?.currentToken == JsonToken.VALUE_EMBEDDED_OBJECT ||
                 jsonParser?.currentToken == JsonToken.VALUE_TRUE ||
@@ -73,7 +72,7 @@ class MatchCriteriaDeserializer: JsonDeserializer<MatchCriteria>() {
         fun getException(type: JsonToken): JsonMappingException {
             return ctxt!!.wrongTokenException(jsonParser, type, "Attempt to parse a different type to MatchCriteria.")
         }
-        Log.w("MatchCriteriaDeserializ", "Name: ${jsonParser?.currentName} - ValueType: ${jsonParser?.currentToken} - Value: ${jsonParser?.valueAsString}")
+
         if (jsonParser?.currentToken == JsonToken.START_OBJECT) {
             val jsonNode: JsonNode = jsonParser.codec.readTree(jsonParser)
 

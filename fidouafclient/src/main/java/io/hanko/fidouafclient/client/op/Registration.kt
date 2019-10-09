@@ -64,12 +64,12 @@ class Registration(val context: Context, val activity: AsmStart, val facetId: St
                 // TODO:
                 mainScope.launch {
                     val trustedFacets = FidoUafUtilsKotlin.getTrustedFacetsAsync(appID!!)
-                    sendToAsm(if (trustedFacets != null) FidoUafUtilsKotlin.isFacetIdValid(trustedFacets, registrationRequest!!.header.upv, facetId) else false)
+                    sendToAsm(if (trustedFacets != null) FidoUafUtilsKotlin.isFacetIdValid(trustedFacets, Version(1, 0), facetId) else false)
                 }
 //            FidoUafUtils.GetTrustedFacetsTask getTrustedFacetsTask = new FidoUafUtils.GetTrustedFacetsTask(this)
 //            getTrustedFacetsTask.execute(registrationRequest.getHeader().getAppID())
             } else {
-                activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null);
+                activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
             }
         }
     }

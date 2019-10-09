@@ -2,10 +2,9 @@ package io.hanko.fidouafclient.client
 
 import android.content.ComponentName
 import android.content.Intent
-import android.os.Binder
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
@@ -140,6 +139,7 @@ class MainActivity: AppCompatActivity(), AsmStart {
     private fun validateUafRequests(requests: Array<UafRequest>): Boolean {
         return requests.groupBy { V(it.header.upv.major, it.header.upv.major) }
                 .none { it.value.size > 1 } && // check that only 1 request per version exists
+                requests.none { it.header.appID?.length ?: 0 > 512 } &&
                 requests.none { it.header.serverData?.length ?: 0 > 1536 || it.header.serverData?.length ?: 1 < 1 } && // check that serverData length is not larger than 1536 and not smaller than 1 if it exists
                 requests.none { it.header.exts?.any { it.id.length > 32 || it.id.isEmpty() } ?: false }
     }
