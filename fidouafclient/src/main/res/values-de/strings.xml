@@ -1,16 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="button_done">Erledigt</string>
-    <string name="button_go_to_settings">Einstellungen</string>
-    <string name="cancel">Abbrechen</string>
-    <string name="fingerprint_description">Zum Fortsetzen Fingerabdruck bestätigen</string>
-    <string name="fingerprint_hint">Sensor berühren</string>
-    <string name="fingerprint_not_enrolled">Schlüssel kann nicht verwendet werden</string>
-    <string name="fingerprint_not_enrolled_msg">Die Verwendung dieses Schlüssels erfordert dieselbe Authentisierungsmethode, die bei der Aktivierung verwendet wurde. Bitte passen Sie Ihre Sicherheitseinstellungen an.</string>
-    <string name="fingerprint_not_recognized">Fingerabdruck nicht erkannt. Versuch es noch einmal</string>
-    <string name="fingerprint_permission">Um diese App zu benutzen benötigen wir die Berechtigung, den Fingerabdruckscanner benutzen zu dürfen</string>
-    <string name="fingerprint_success">Fingerabdruck erkannt</string>
-    <string name="requested_permission">Berechtigung angefordert</string>
-    <string name="screenlock">Bildschirmsperre ist nicht aktiv</string>
-    <string name="screenlock_msg">Um diese App zu verwenden muss die Bildschirmsperre aktiv sein</string>
+    <string name="uafclient_biometric_prompt_title_reg">Registrierung</string>
+    <string name="uafclient_biometric_prompt_title_auth">Authentifizierung</string>
+    <string name="uafclient_biometric_prompt_description_reg">Authentifiziere dich um einen Schlüssel zu erstellen</string>
+    <string name="uafclient_biometric_prompt_description_auth">AAuthentifiziere dich um einen Schlüssel zu benutzen</string>
+
+    <string name="uafclient_account_chooser_title">Wähle deinen Schlüssel</string>
 </resources>

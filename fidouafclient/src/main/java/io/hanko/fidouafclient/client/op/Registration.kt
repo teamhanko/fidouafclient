@@ -1,138 +1,109 @@
 package io.hanko.fidouafclient.client.op;
 
-import android.content.Context;
-import android.util.Base64;
-import android.util.Log;
-
-import com.google.gson.Gson;
-
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Objects;
-
-import io.hanko.fidouafclient.asm.msgs.Request;
-import io.hanko.fidouafclient.asm.msgs.request.ASMRequestReg;
-import io.hanko.fidouafclient.asm.msgs.request.RegisterIn;
-import io.hanko.fidouafclient.asm.msgs.response.RegisterOut;
-import io.hanko.fidouafclient.client.MainActivity;
-import io.hanko.fidouafclient.client.interfaces.AsmStart;
-import io.hanko.fidouafclient.client.interfaces.FacetIds;
-import io.hanko.fidouafclient.client.msg.AuthenticatorRegistrationAssertion;
-import io.hanko.fidouafclient.client.msg.ChannelBinding;
-import io.hanko.fidouafclient.client.msg.FinalChallengeParams;
-import io.hanko.fidouafclient.client.msg.RegistrationResponse;
-import io.hanko.fidouafclient.client.msg.UafRegistrationRequest;
-import io.hanko.fidouafclient.client.msg.Version;
-import io.hanko.fidouafclient.client.msg.client.UAFIntentType;
-import io.hanko.fidouafclient.utility.ErrorCode;
-import io.hanko.fidouafclient.utility.FidoUafUtils;
-import io.hanko.fidouafclient.utility.FidoUafUtilsKotlin;
+import android.util.Base64
+import android.util.Log
+import io.hanko.fidouafclient.asm.msgs.RequestType
+import io.hanko.fidouafclient.asm.msgs.request.ASMRequestReg
+import io.hanko.fidouafclient.asm.msgs.request.RegisterIn
+import io.hanko.fidouafclient.asm.msgs.response.RegisterOut
+import io.hanko.fidouafclient.client.msg.*
+import io.hanko.fidouafclient.client.msg.client.ErrorCode
+import io.hanko.fidouafclient.client.msg.client.UAFIntentType
+import io.hanko.fidouafclient.util.ClientUtil
+import io.hanko.fidouafclient.util.Util
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.nio.charset.StandardCharsets
+import java.util.*
 
-class Registration(val context: Context, val activity: AsmStart, val facetId: String, val channelBinding: String): FacetIds {
+class Registration(val facetId: String, val channelBinding: String) {
 
     private val TAG: String = "Registration"
-    private val gson = Gson()
     private var registrationRequest: UafRegistrationRequest? = null
     private var appID: String? = null
     private var finalChallengeParams: FinalChallengeParams? = null
     private val mainScope = CoroutineScope(Dispatchers.Main + Job())
 
-    fun processRequests(registrationRequests: List<UafRegistrationRequest>) {
-        registrationRequest = registrationRequests.find { it.header.upv.major == 1 && it.header.upv.minor == 1 } ?: registrationRequests.find { it.header.upv.major == 1 && it.header.upv.minor == 0 }
+    fun processRequests(registrationRequests: List<UafRegistrationRequest>, sendToAsm: (message: String) -> Unit, sendReturnIntent: (UAFIntentType?, ErrorCode, String?) -> Unit, skipTrustedFacetValidation: Boolean) {
+        val regRequest = registrationRequests.find { it.header.upv.major == 1 && it.header.upv.minor == 1 }
+                ?: registrationRequests.find { it.header.upv.major == 1 && it.header.upv.minor == 0 }
+        registrationRequest = regRequest
 
-        if (registrationRequest?.policy?.accepted?.any { it.any { !it.isValid() } } == true ||
-            registrationRequest?.policy?.disallowed?.any { !it.isValid() } == true ||
-            registrationRequest?.policy?.accepted?.isEmpty() == true) {
-            activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
-        } else {
+        val challengeBytes = Base64.decode(regRequest?.challenge ?: "", Base64.URL_SAFE)
 
-            if (registrationRequest == null) {
-                activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.UNSUPPORTED_VERSION, null)
-            } else if (registrationRequest!!.challenge.isEmpty()) {
-                activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
-            } else if (registrationRequest!!.header.appID == null || registrationRequest!!.header.appID!!.isEmpty() || Objects.equals(registrationRequest!!.header.appID, facetId)) {
-                appID = facetId
-                sendToAsm(true)
-            } else if (registrationRequest!!.header.appID!!.contains("https://")) {
-                appID = registrationRequest!!.header.appID
-                // TODO:
-                mainScope.launch {
-                    val trustedFacets = FidoUafUtilsKotlin.getTrustedFacetsAsync(appID!!)
-                    sendToAsm(if (trustedFacets != null) FidoUafUtilsKotlin.isFacetIdValid(trustedFacets, Version(1, 0), facetId) else false)
-                }
-//            FidoUafUtils.GetTrustedFacetsTask getTrustedFacetsTask = new FidoUafUtils.GetTrustedFacetsTask(this)
-//            getTrustedFacetsTask.execute(registrationRequest.getHeader().getAppID())
+        if (regRequest == null) {
+            sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.UNSUPPORTED_VERSION, null)
+        } else if (regRequest.policy.accepted.any { it.any { !it.isValid() } } ||
+                regRequest.policy.disallowed?.any { !it.isValid() } == true ||
+                regRequest.policy.accepted.isEmpty() ||
+                challengeBytes.size < 8 || challengeBytes.size > 64) {
+            sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
+        } else if (regRequest.header.appID == null || regRequest.header.appID.isEmpty() || Objects.equals(regRequest.header.appID, facetId)) {
+            appID = facetId
+            this.sendToAsm(regRequest, sendToAsm, sendReturnIntent)
+        } else if (Util.isValidHttpsUrl(regRequest.header.appID)) {
+            appID = regRequest.header.appID
+            if (skipTrustedFacetValidation) {
+                this.sendToAsm(regRequest, sendToAsm, sendReturnIntent)
             } else {
-                activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
+                mainScope.launch {
+                    val trustedFacets = ClientUtil.getTrustedFacetsAsync(appID!!)
+                    if (trustedFacets != null && ClientUtil.isFacetIdValid(trustedFacets, Version(1, 0), facetId))
+                        this@Registration.sendToAsm(regRequest, sendToAsm, sendReturnIntent)
+                    else
+                        sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.UNTRUSTED_FACET_ID, null)
+                }
             }
+        } else {
+            sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
         }
     }
-    
-    fun processASMResponse(registerOut: RegisterOut) {
+
+    fun processASMResponse(registerOut: RegisterOut, sendReturnIntent: (UAFIntentType?, ErrorCode, String?) -> Unit) {
         val registrationAssertion = AuthenticatorRegistrationAssertion(
                 assertionScheme = registerOut.assertionScheme,
                 assertion = registerOut.assertion,
                 tcDisplayPNGCharacteristics = null,
                 exts = null)
-        //registrationAssertion = registerOut.assertion;
-        //registrationAssertion.assertionScheme = registerOut.assertionScheme;
 
-//        RegistrationResponse[] registrationResponse = new RegistrationResponse[1];
         val registrationResponse = listOf(RegistrationResponse(
                 registrationRequest!!.header,
-                Base64.encodeToString(gson.toJson(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
+                Base64.encodeToString(Util.objectMapper.writeValueAsString(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
                 Collections.singletonList(registrationAssertion)
-                ))
-//        registrationResponse[0].header = registrationRequest.getHeader();
-//        registrationResponse[0].fcParams = Base64.encodeToString(gson.toJson(finalChallengeParams).getBytes(StandardCharsets.UTF_8), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
-//        registrationResponse[0].assertions = new AuthenticatorRegistrationAssertion[]{registrationAssertion};
+        ))
 
-        activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_ERROR, gson.toJson(registrationResponse));
+        sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_ERROR, Util.objectMapper.writeValueAsString(registrationResponse))
     }
 
-    private fun sendToAsm(isFacetIdValid: Boolean) {
-        if (isFacetIdValid) {
-            finalChallengeParams = FinalChallengeParams(
-                    appID!!,
-                    registrationRequest!!.challenge,
-                    facetId,
-                    gson.fromJson(channelBinding, ChannelBinding::class.java)
-            )
-//            finalChallengeParams.appID = appID;
-//            finalChallengeParams.challenge = registrationRequest.getChallenge();
-//            finalChallengeParams.facetID = facetId;
-//            finalChallengeParams.channelBinding = gson.fromJson(channelBinding, ChannelBinding.class);
+    private fun sendToAsm(registrationRequest: UafRegistrationRequest, sendToAsm: (message: String) -> Unit, sendReturnIntent: (UAFIntentType?, ErrorCode, String?) -> Unit) {
+        finalChallengeParams = FinalChallengeParams(
+                appID!!,
+                registrationRequest.challenge,
+                facetId,
+                Util.objectMapper.readValue(channelBinding, ChannelBinding::class.java)
+        )
 
-            val registerIn = RegisterIn()
-            registerIn.attestationType = 15880 // Attestation Surrogate
-            registerIn.username = registrationRequest!!.username
-            registerIn.appID = appID
-            registerIn.finalChallenge = Base64.encodeToString(gson.toJson(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
-            
-            val asmRequestReg = ASMRequestReg()
-            asmRequestReg.asmVersion = registrationRequest!!.header.upv
-            asmRequestReg.requestType = Request.Register
-            asmRequestReg.authenticatorIndex = 0 // authenticator in this App will always have index = 0
-            asmRequestReg.args = registerIn
+        val registerIn = RegisterIn()
+        registerIn.attestationType = 15880 // Attestation Surrogate
+        registerIn.username = registrationRequest.username
+        registerIn.appID = appID
+        registerIn.finalChallenge = Base64.encodeToString(Util.objectMapper.writeValueAsString(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
 
-            try { // try-catch as workaround for Huawei smartphones, because they won´t call method
-                activity.sendToAsm(gson.toJson(asmRequestReg), MainActivity.ASM_REG_REQUEST_CODE, FidoUafUtilsKotlin.getAsmFromPolicy(context, registrationRequest!!.policy, appID!!))
-            } catch (ex: Exception) {
-                Log.e(TAG, "Error while sending asmRegistrationRequest to ASM", ex)
-                activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_SUITABLE_AUTHENTICATOR, null)
-            }
-        } else {
-            activity.sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.UNTRUSTED_FACET_ID, null)
+        val asmRequestReg = ASMRequestReg(
+                requestType = RequestType.Register,
+                asmVersion = registrationRequest.header.upv,
+                authenticatorIndex = 0,
+                args = registerIn,
+                exts = null
+        )
+
+        try { // try-catch as workaround for Huawei smartphones, because they won´t call method
+            sendToAsm(Util.objectMapper.writeValueAsString(asmRequestReg)) //, MainASM_REG_REQUEST_CODE, ClientUtil.getAsmFromPolicy(registrationRequest.policy, appID!!))
+        } catch (ex: Exception) {
+            Log.e(TAG, "Error while sending asmRegistrationRequest to ASM", ex)
+            sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_SUITABLE_AUTHENTICATOR, null)
         }
-    }
-
-    override fun processTrustedFacetIds(trustedFacetJson: String) {
-        sendToAsm(FidoUafUtils.isFacetIdValid(trustedFacetJson, registrationRequest!!.header.upv, facetId))
     }
 }

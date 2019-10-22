@@ -15,7 +15,7 @@ class UafRegistrationRequest(
 ): UafRequest(header)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-class UafAuthenticationRequest(override val header: OperationHeader, val challenge: String, val transaction: List<Transaction>, val policy: Policy): UafRequest(header)
+class UafAuthenticationRequest(override val header: OperationHeader, val challenge: String, val transaction: List<Transaction>?, val policy: Policy): UafRequest(header)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 class UafDeregistrationRequest(override val header: OperationHeader, val authenticators: List<DeregisterAuthenticator>): UafRequest(header)

@@ -5,22 +5,13 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.module.SimpleModule
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-
-import com.google.gson.Gson
-
-import org.json.JSONException
-import org.json.JSONObject
-
+import com.fasterxml.jackson.module.kotlin.readValue
+import io.hanko.fidouafclient.asm.AsmActivity
 import io.hanko.fidouafclient.asm.msgs.StatusCode
 import io.hanko.fidouafclient.asm.msgs.response.ASMResponse
 import io.hanko.fidouafclient.asm.msgs.response.ASMResponseAuth
 import io.hanko.fidouafclient.asm.msgs.response.ASMResponseReg
-import io.hanko.fidouafclient.authenticator.config.AuthenticatorConfig
-import io.hanko.fidouafclient.client.interfaces.AsmStart
+import io.hanko.fidouafclient.authenticator.config.AuthenticatorMetadata
 import io.hanko.fidouafclient.client.msg.*
 import io.hanko.fidouafclient.client.msg.client.DiscoveryData
 import io.hanko.fidouafclient.client.msg.client.UAFIntentType
@@ -28,16 +19,19 @@ import io.hanko.fidouafclient.client.msg.client.UAFMessage
 import io.hanko.fidouafclient.client.op.Authentication
 import io.hanko.fidouafclient.client.op.Deregistration
 import io.hanko.fidouafclient.client.op.Registration
-import io.hanko.fidouafclient.utility.*
-import java.lang.Exception
+import io.hanko.fidouafclient.client.msg.client.ErrorCode
+import io.hanko.fidouafclient.util.ClientUtil
+import io.hanko.fidouafclient.util.Util
+import io.hanko.fidouafclient.util.Util.objectMapper
+import org.json.JSONException
+import org.json.JSONObject
 
 data class V(val major: Int, val minor: Int)
 
-class MainActivity: AppCompatActivity(), AsmStart {
+class MainActivity : AppCompatActivity() {
 
     private val TAG: String = "MainActivity"
     private var componentName: String? = null
-    private val gson = Gson()
     private var facetId: String? = null
 
     companion object {
@@ -59,8 +53,8 @@ class MainActivity: AppCompatActivity(), AsmStart {
         val callingIntent = intent
         val extras = callingIntent.extras
 
-        facetId = FidoUafUtils.getFacetIDWithName(applicationContext, callingActivity!!.packageName)
-        if (ClientUtil.validateRequestIntent(callingIntent)) {
+        facetId = ClientUtil.getFacetIDWithName(applicationContext, callingActivity!!.packageName)
+        if (ClientUtil.validateRequestIntent(callingIntent) && extras != null) {
             try {
                 processUafRequest(extras)
             } catch (ex: Exception) {
@@ -74,19 +68,19 @@ class MainActivity: AppCompatActivity(), AsmStart {
 
     private fun processDiscoveryRequest() {
         val discoveryData = DiscoveryData(
-                listOf(Version(1, 0), Version(1, 1)),
+                listOf(Version(1, 1), Version(1, 0)),
                 "Hanko",
-                Version(1,0),
-                listOf(AuthenticatorConfig.authenticator)
+                Version(1, 0),
+                listOf(AuthenticatorMetadata.authenticator)
         )
 
-        sendReturnIntent(UAFIntentType.DISCOVER_RESULT, ErrorCode.NO_ERROR, gson.toJson(discoveryData))
+        sendDiscoveryReturnIntent(objectMapper.writeValueAsString(discoveryData))
     }
 
     private fun processCheckPolicyRequest(extras: Bundle) {
-        val message: String? = extras.getString("message")
+        val message: String? = extras.getString(Util.INTENT_MESSAGE_NAME)
         if (message != null) {
-            val uafOperationMessageString = gson.fromJson(message, UAFMessage::class.java).uafProtocolMessage
+            val uafOperationMessageString = objectMapper.readValue(message, UAFMessage::class.java).uafProtocolMessage
             val requests = parseUafOperationMessage(uafOperationMessageString)
             if (requests.isEmpty()) {
                 sendReturnIntent(UAFIntentType.CHECK_POLICY_RESULT, ErrorCode.PROTOCOL_ERROR, null)
@@ -101,8 +95,9 @@ class MainActivity: AppCompatActivity(), AsmStart {
 
             when {
                 policy == null -> sendReturnIntent(UAFIntentType.CHECK_POLICY_RESULT, ErrorCode.NO_ERROR, null)
-                FidoUafUtilsKotlin.canEvaluatePolicy(this, policy, requests[0].header.appID ?: "") -> sendReturnIntent(UAFIntentType.CHECK_POLICY_RESULT, ErrorCode.NO_ERROR, null)
-                else -> sendReturnIntent(UAFIntentType.CHECK_POLICY_RESULT, ErrorCode.PROTOCOL_ERROR, null)
+                ClientUtil.canEvaluatePolicy(policy, requests[0].header.appID
+                        ?: "") -> sendReturnIntent(UAFIntentType.CHECK_POLICY_RESULT, ErrorCode.NO_ERROR, null)
+                else -> sendReturnIntent(UAFIntentType.CHECK_POLICY_RESULT, ErrorCode.NO_SUITABLE_AUTHENTICATOR, null)
             }
         } else {
             sendReturnIntent(UAFIntentType.CHECK_POLICY_RESULT, ErrorCode.PROTOCOL_ERROR, null)
@@ -111,11 +106,12 @@ class MainActivity: AppCompatActivity(), AsmStart {
 
     private fun processUafOperationRequest(extras: Bundle) {
         val channelBinding: String? = extras.getString("channelBindings")
-        val message: String? = extras.getString("message")
+        val message: String? = extras.getString(Util.INTENT_MESSAGE_NAME)
+        val skipTrustedFacetValidation: Boolean = extras.getBoolean("skipTrustedFacetValidation", false)
         if (channelBinding != null && message != null) {
             try {
-                val uafOperationMessage = gson.fromJson(message, UAFMessage::class.java).uafProtocolMessage
-                processUafRequest(uafOperationMessage, channelBinding)
+                val uafOperationMessage = objectMapper.readValue(message, UAFMessage::class.java).uafProtocolMessage
+                processUafRequest(uafOperationMessage, channelBinding, skipTrustedFacetValidation)
             } catch (ex: Exception) {
                 sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
             }
@@ -127,7 +123,8 @@ class MainActivity: AppCompatActivity(), AsmStart {
 
     private fun processUafRequest(extras: Bundle) {
         // could throw IllegalArgumentException if string can not translated to an enum value
-        when (UAFIntentType.valueOf(extras.getString("UAFIntentType"))) {
+        val uafType = extras.getString("UAFIntentType")?.let { UAFIntentType.valueOf(it) }
+        when (uafType) {
             UAFIntentType.DISCOVER -> processDiscoveryRequest()
             UAFIntentType.CHECK_POLICY -> processCheckPolicyRequest(extras)
             UAFIntentType.UAF_OPERATION_COMPLETION_STATUS -> finish()
@@ -136,27 +133,32 @@ class MainActivity: AppCompatActivity(), AsmStart {
         }
     }
 
-    private fun validateUafRequests(requests: Array<UafRequest>): Boolean {
+    private fun validateUafRequests(requests: List<UafRequest>): Boolean {
         return requests.groupBy { V(it.header.upv.major, it.header.upv.major) }
                 .none { it.value.size > 1 } && // check that only 1 request per version exists
                 requests.none { it.header.appID?.length ?: 0 > 512 } &&
                 requests.none { it.header.serverData?.length ?: 0 > 1536 || it.header.serverData?.length ?: 1 < 1 } && // check that serverData length is not larger than 1536 and not smaller than 1 if it exists
-                requests.none { it.header.exts?.any { it.id.length > 32 || it.id.isEmpty() } ?: false }
+                requests.none { request ->
+                    request.header.exts?.any { it.id.length > 32 || it.id.isEmpty() } ?: false
+                }
     }
 
-    private fun validateExtensions(requests: Array<UafRequest>): Boolean {
-        return requests.none { it.header.exts?.any { !AuthenticatorConfig.authenticator.supportedExtensionIDs.contains(it.id) && it.fail_if_unknown } ?: false }
+    private fun validateExtensions(requests: List<UafRequest>): Boolean {
+        return requests.none {
+            it.header.exts?.any { !AuthenticatorMetadata.authenticator.supportedExtensionIDs.contains(it.id) && it.fail_if_unknown }
+                    ?: false
+        }
     }
 
-    private fun processUafRequest(uafOperationMessage: String, channelBinding: String) {
+    private fun processUafRequest(uafOperationMessage: String, channelBinding: String, skipTrustedFacetValidation: Boolean) {
 
         val request = parseUafOperationMessage(uafOperationMessage)
-        if (request.isEmpty() || !validateUafRequests(request.filterIsInstance<UafRequest>().toTypedArray())) {
+        if (request.isEmpty() || !validateUafRequests(request)) {
             sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
             return
         }
 
-        if (!validateExtensions(request.filterIsInstance<UafRequest>().toTypedArray())) {
+        if (!validateExtensions(request)) {
             sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.UNKNOWN, null)
             return
         }
@@ -166,64 +168,32 @@ class MainActivity: AppCompatActivity(), AsmStart {
             return
         }
 
-        when(request[0].header.op) {
+        when (request[0].header.op) {
             Operation.Reg -> {
-                registrationProcess = Registration(this, this, facetId!!, channelBinding)
-                registrationProcess!!.processRequests(request.filterIsInstance<UafRegistrationRequest>())
+                registrationProcess = Registration(facetId!!, channelBinding)
+                registrationProcess!!.processRequests(request.filterIsInstance<UafRegistrationRequest>(), sendToAsm(ASM_REG_REQUEST_CODE), this::sendReturnIntent, skipTrustedFacetValidation)
             }
             Operation.Auth -> {
-                authenticationProcess = Authentication(this, this, facetId, channelBinding)
-                authenticationProcess!!.processRequests(request.filterIsInstance<UafAuthenticationRequest>().toTypedArray())
+                authenticationProcess = Authentication(facetId!!, channelBinding)
+                authenticationProcess!!.processRequests(request.filterIsInstance<UafAuthenticationRequest>(), sendToAsm(ASM_AUTH_REQUEST_CODE), this::sendReturnIntent, skipTrustedFacetValidation)
             }
             Operation.Dereg -> {
-                deregistrationProcess = Deregistration(this, this, facetId, channelBinding)
-                deregistrationProcess!!.processRequests(request.filterIsInstance<UafDeregistrationRequest>().toTypedArray())
+                deregistrationProcess = Deregistration(facetId!!, channelBinding)
+                deregistrationProcess!!.processRequests(request.filterIsInstance<UafDeregistrationRequest>(), sendToAsm(ASM_DEREG_REQUEST_CODE), this::sendReturnIntent, skipTrustedFacetValidation)
             }
         }
-
-//        val requests = gson.fromJson(uafOperationMessage, Array<UafRequest>::class.java)
-//        if (requests.isEmpty()) {
-//            sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
-//            return
-//        }
-//        when (requests[0].header.op) {
-//            Operation.Reg -> {
-//                registrationProcess = Registration(this, this, facetId, channelBinding)
-//                registrationProcess!!.processRequests(gson.fromJson(uafOperationMessage, Array<UafRegistrationRequest>::class.java))
-//            }
-//            Operation.Auth -> {
-//                authenticationProcess = Authentication (this, this, facetId, channelBinding)
-//                authenticationProcess!!.processRequests(gson.fromJson(uafOperationMessage, Array<UafAuthenticationRequest>::class.java))
-//            }
-//            Operation.Dereg -> {
-//                deregistrationProcess = Deregistration (this, this, facetId, channelBinding)
-//                deregistrationProcess!!.processRequests(gson.fromJson(uafOperationMessage, Array<UafDeregistrationRequest>::class.java))
-//            }
-//            else -> sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
-//        }
     }
 
-    private fun parseUafOperationMessage(uafOperationMessage: String): Array<out UafRequest> {
-        val objectMapper = ObjectMapper()
-                .registerKotlinModule()
-                .registerModule(
-                        SimpleModule()
-                                .addDeserializer(String::class.java, ForceStringDeserializer())
-                                .addDeserializer(Int::class.java, ForceIntDeserializer())
-                                .addDeserializer(Long::class.java, ForceLongDeserializer())
-                                .addDeserializer(MatchCriteria::class.java, MatchCriteriaDeserializer())
-                )
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-
-        val requests = objectMapper.readValue(uafOperationMessage, Array<UafRequest>::class.java)
+    private fun parseUafOperationMessage(uafOperationMessage: String): List<UafRequest> {
+        val requests: List<UafRequest> = objectMapper.readValue(uafOperationMessage)
         if (requests.isEmpty()) {
-            return emptyArray()
+            return emptyList()
         }
 
         return when (requests[0].header.op) {
-            Operation.Reg -> objectMapper.readValue(uafOperationMessage, Array<UafRegistrationRequest>::class.java)
-            Operation.Auth -> objectMapper.readValue(uafOperationMessage, Array<UafAuthenticationRequest>::class.java)
-            Operation.Dereg -> objectMapper.readValue(uafOperationMessage, Array<UafDeregistrationRequest>::class.java)
+            Operation.Reg -> objectMapper.readValue<List<UafRegistrationRequest>>(uafOperationMessage)
+            Operation.Auth -> objectMapper.readValue<List<UafAuthenticationRequest>>(uafOperationMessage)
+            Operation.Dereg -> objectMapper.readValue<List<UafDeregistrationRequest>>(uafOperationMessage)
         }
     }
 
@@ -238,24 +208,26 @@ class MainActivity: AppCompatActivity(), AsmStart {
         finishAndRemoveTask()
     }
 
+
     /**
-     * build an Intent which will be returned to calling App
+     * Build an intent which will be returned to calling activity
      *
      * @param uafIntentType
      * @param errorCode
      * @param message
      */
-    override fun sendReturnIntent(uafIntentType: UAFIntentType?, errorCode: ErrorCode, message: String?) {
+    fun sendReturnIntent(uafIntentType: UAFIntentType?, errorCode: ErrorCode, message: String?) {
         val uafIntentTypeString = uafIntentType?.name ?: "undefined"
         val resultIntent = Intent()
         if (message != null) {
             val jsonObject = JSONObject()
             try {
                 jsonObject.put("uafProtocolMessage", message)
-                resultIntent.putExtra("message", jsonObject.toString())
+                resultIntent.putExtra(Util.INTENT_MESSAGE_NAME, jsonObject.toString())
             } catch (ex: JSONException) {
-                Log.e(TAG, ex.message)
+                Log.e(TAG, "${ex.message}")
                 sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.UNKNOWN, null)
+                return
             }
         }
         resultIntent.putExtra("UAFIntentType", uafIntentTypeString)
@@ -264,22 +236,23 @@ class MainActivity: AppCompatActivity(), AsmStart {
         returnUafResponse(RESULT_OK, resultIntent)
     }
 
-    /**
-     * send ASMRequest to ASM
-     *
-     * @param message
-     * @param requestCode
-     */
-    override fun sendToAsm(message: String, requestCode: Int, activity: Class<*>?) {
-//        Intent asmIntent = new Intent("org.fidoalliance.intent.FIDO_OPERATION");
-        if (activity != null) {
-            val asmIntent = Intent(this, activity) // send Request to our ASM and don´t give the User the choice if there are more than our ASM
+    private fun sendDiscoveryReturnIntent(discoverData: String) {
+        val resultIntent = Intent()
+        resultIntent.putExtra("discoveryData", discoverData)
+        resultIntent.putExtra("UAFIntentType", UAFIntentType.DISCOVER_RESULT.name)
+        resultIntent.putExtra("componentName", componentName)
+        resultIntent.putExtra("errorCode", ErrorCode.NO_ERROR.id)
+        returnUafResponse(RESULT_OK, resultIntent)
+    }
+
+    fun sendToAsm(requestCode: Int): (message: String) -> Unit {
+        return { message: String ->
+            //        Intent asmIntent = new Intent("org.fidoalliance.intent.FIDO_OPERATION");
+            val asmIntent = Intent(this, AsmActivity::class.java) // send RequestType to our ASM and don´t give the User the choice if there are more than our ASM
             asmIntent.type = "application/fido.uaf_asm+json"
-            asmIntent.putExtra("message", message)
+            asmIntent.putExtra(Util.INTENT_MESSAGE_NAME, message)
 
             startActivityForResult(asmIntent, requestCode)
-        } else {
-            sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_SUITABLE_AUTHENTICATOR, "")
         }
     }
 
@@ -295,21 +268,21 @@ class MainActivity: AppCompatActivity(), AsmStart {
 
         if (data != null) {
             // Operation is identified by requestCode
-            val message = data.getStringExtra("message")
-            val asmResponse = gson.fromJson(message, ASMResponse::class.java)
+            val message = data.getStringExtra(Util.INTENT_MESSAGE_NAME)
+            val asmResponse = objectMapper.readValue(message, ASMResponse::class.java)
             if (requestCode == ASM_REG_REQUEST_CODE) {
                 if (asmResponse.statusCode == StatusCode.UAF_ASM_STATUS_OK.id)
-                    registrationProcess!!.processASMResponse(gson.fromJson(message, ASMResponseReg::class.java).responseData)
+                    registrationProcess!!.processASMResponse(objectMapper.readValue(message, ASMResponseReg::class.java).responseData, this::sendReturnIntent)
                 else
                     sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, convertStatusCodeToErrorCode(asmResponse.statusCode), null)
             } else if (requestCode == ASM_AUTH_REQUEST_CODE) {
                 if (asmResponse.statusCode == StatusCode.UAF_ASM_STATUS_OK.id)
-                    authenticationProcess!!.processASMResponse(gson.fromJson(message, ASMResponseAuth::class.java).responseData)
+                    authenticationProcess!!.processASMResponse(objectMapper.readValue(message, ASMResponseAuth::class.java).responseData, this::sendReturnIntent)
                 else
                     sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, convertStatusCodeToErrorCode(asmResponse.statusCode), null)
             } else {
                 if (asmResponse.statusCode == StatusCode.UAF_ASM_STATUS_OK.id) {
-                    deregistrationProcess!!.processASMResponse()
+                    deregistrationProcess!!.processASMResponse(this::sendReturnIntent)
                 } else {
                     sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, convertStatusCodeToErrorCode(asmResponse.statusCode), null)
                 }
@@ -321,9 +294,17 @@ class MainActivity: AppCompatActivity(), AsmStart {
 
     private fun convertStatusCodeToErrorCode(statusCode: Short): ErrorCode {
         return when (statusCode) {
-            StatusCode.UAF_ASM_STATUS_USER_CANCELLED.id -> ErrorCode.USER_CANCELLED
             StatusCode.UAF_ASM_STATUS_OK.id -> ErrorCode.NO_ERROR
+            StatusCode.UAF_ASM_STATUS_ERROR.id -> ErrorCode.UNKNOWN
+            StatusCode.UAF_ASM_STATUS_ACCESS_DENIED.id -> ErrorCode.AUTHENTICATOR_ACCESS_DENIED
+            StatusCode.UAF_ASM_STATUS_USER_CANCELLED.id -> ErrorCode.USER_CANCELLED
+            StatusCode.UAF_ASM_STATUS_CANNOT_RENDER_TRANSACTION_CONTENT.id -> ErrorCode.INVALID_TRANSACTION_CONTENT
             StatusCode.UAF_ASM_STATUS_KEY_DISAPPEARED_PERMANENTLY.id -> ErrorCode.KEY_DISAPPEARED_PERMANENTLY
+            StatusCode.UAF_ASM_STATUS_AUTHENTICATOR_DISCONNECTED.id -> ErrorCode.NO_SUITABLE_AUTHENTICATOR
+            StatusCode.UAF_ASM_STATUS_USER_NOT_RESPONSIVE.id -> ErrorCode.USER_NOT_RESPONSIVE
+            StatusCode.UAF_ASM_STATUS_INSUFFICIENT_AUTHENTICATOR_RESOURCES.id -> ErrorCode.INSUFFICIENT_AUTHENTICATOR_RESOURCES
+            StatusCode.UAF_ASM_STATUS_USER_LOCKOUT.id -> ErrorCode.USER_LOCKOUT
+            StatusCode.UAF_ASM_STATUS_USER_NOT_ENROLLED.id -> ErrorCode.USER_NOT_ENROLLED
             else -> ErrorCode.UNKNOWN
         }
     }

@@ -1,19 +1,8 @@
 <resources>
-    <string name="fingerprint_description">Confirm fingerprint to continue</string>
+    <string name="uafclient_biometric_prompt_title_reg">Register</string>
+    <string name="uafclient_biometric_prompt_title_auth">Authenticate</string>
+    <string name="uafclient_biometric_prompt_description_reg">Authenticate to create a key</string>
+    <string name="uafclient_biometric_prompt_description_auth">Authenticate to use a key</string>
 
-    <string name="fingerprint_hint">Touch sensor</string>
-    <string name="fingerprint_not_recognized">Fingerprint not recognized. Try again</string>
-    <string name="fingerprint_success">Fingerprint recognized</string>
-
-    <string name="screenlock">Screen lock is not defined</string>
-    <string name="screenlock_msg">In order to use this application, you must set up a screen lock method</string>
-
-    <string name="fingerprint_not_enrolled">Key cannot be used</string>
-    <string name="fingerprint_not_enrolled_msg">This key can only be accessed with the same authentication method that was used on activation. Please check your security settings.</string>
-    <string name="button_go_to_settings">Go to Settings</string>
-
-    <string name="requested_permission">Requested permission</string>
-    <string name="fingerprint_permission">I\'m sorry, we really need fingerprint permission or this app will not work properly</string>
-    <string name="button_done">Done</string>
-    <string name="cancel">Cancel</string>
+    <string name="uafclient_account_chooser_title">Choose your key</string>
 </resources>

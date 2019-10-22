@@ -1,12 +1,10 @@
 package io.hanko.fidouafclient.client.msg
 
-import android.content.Context
-import android.util.Base64
 import com.fasterxml.jackson.annotation.JsonProperty
-import io.hanko.fidouafclient.authenticator.config.AuthenticatorConfig
 import io.hanko.fidouafclient.authenticator.msgs.Authenticator
-import io.hanko.fidouafclient.utility.Preferences
-import java.lang.Exception
+import io.hanko.fidouafclient.util.Crypto
+import io.hanko.fidouafclient.util.Util
+import java.security.KeyStore
 
 class MatchCriteria
 (
@@ -38,25 +36,25 @@ class MatchCriteria
 
         if (aaid != null) {
             if (vendorID != null ||
-            userVerification != null ||
-            keyProtection != null ||
-            matcherProtection != null ||
-            tcDisplay != null ||
-            authenticationAlgorithms != null ||
-            assertionSchemes != null ||
-            attestationTypes != null) {
+                    userVerification != null ||
+                    keyProtection != null ||
+                    matcherProtection != null ||
+                    tcDisplay != null ||
+                    authenticationAlgorithms != null ||
+                    assertionSchemes != null ||
+                    attestationTypes != null) {
                 return false
             }
         }
 
         if (keyIDs != null) {
-            return keyIDs.all { isKeyIdValid(it) }
+            return keyIDs.all { Util.isBase64UrlEncoded(it) }
         }
 
         return true
     }
 
-    fun matchesAuthenticator(authenticator: Authenticator, context: Context, appId: String): Boolean {
+    fun matchesAuthenticator(authenticator: Authenticator, appId: String, isRegistration: Boolean): Boolean {
         if ((aaid != null && aaid.size != 1) || (aaid != null && aaid[0] != authenticator.aaid)) {
             return false
         }
@@ -97,30 +95,20 @@ class MatchCriteria
             return false
         }
 
-        if (keyIDs != null && !isKeyIdRegisteredForAuthenticator(context, keyIDs, authenticator.aaid, appId)) {
+        if (keyIDs != null && !isKeyIdRegisteredForAuthenticator(appId, keyIDs) && isRegistration) {
             return false
         }
 
         return true
     }
 
-    private fun isKeyIdRegisteredForAuthenticator(context: Context, keyIDs: List<String>?, aaid: String, appId: String): Boolean {
-        if (keyIDs == null || keyIDs.isEmpty() || keyIDs.none { isKeyIdValid(it) }) {
+    private fun isKeyIdRegisteredForAuthenticator(appId: String, keyIDs: List<String>): Boolean {
+        if (keyIDs.isEmpty() || keyIDs.none { Util.isBase64UrlEncoded(it) }) {
             return false
         }
 
-        val preferenceName = if (aaid == AuthenticatorConfig.authenticator.aaid) Preferences.FINGERPRINT_PREFERENCE else Preferences.LOCKSCREEN_PREFERENCE
-        val sharedPreferences = Preferences.create(context, preferenceName)
-        val registeredKeyIds = Preferences.getParamSet(sharedPreferences, appId)
-
-        return registeredKeyIds.any { keyIDs.contains(it) }
-    }
-
-    private fun isKeyIdValid(keyId: String): Boolean {
-        return try {
-            Base64.decode(keyId, Base64.URL_SAFE).isNotEmpty() && !keyId.contains("/") && !keyId.contains("+")
-        } catch (ex: Exception) {
-            false
-        }
+        val requestedKeyAliases = keyIDs.mapNotNull { Crypto.getKeyStoreAlias(appId, it) }
+        val keyStore = KeyStore.getInstance(Crypto.KEYSTORE)
+        return keyStore.aliases().toList().any { requestedKeyAliases.contains(it) }
     }
 }

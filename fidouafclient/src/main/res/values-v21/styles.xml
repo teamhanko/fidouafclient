@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppTheme.TextAppearance.Material.Body1" parent="@android:style/TextAppearance.Material.Body1" />
-    <style name="AppTheme.TextAppearance.Material.Subhead" parent="@android:style/TextAppearance.Material.Subhead" />
+    <!--<style name="AppTheme.TextAppearance.Material.Body1" parent="@android:style/TextAppearance.Material.Body1" />
+    <style name="AppTheme.TextAppearance.Material.Subhead" parent="@android:style/TextAppearance.Material.Subhead" />-->
 </resources>

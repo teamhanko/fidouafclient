@@ -6,10 +6,15 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-feature
+        android:name="android.hardware.biometrics"
+        android:required="false" />
+    <uses-feature
         android:name="android.hardware.fingerprint"
         android:required="false" />
 
-    <application>
+    <application
+        android:usesCleartextTraffic="true"
+        >
         <activity
             android:name=".client.MainActivity"
             android:clearTaskOnLaunch="true"
@@ -25,30 +30,17 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".asm.AsmFingerprintActivity"
+            android:name=".asm.AsmActivity"
             android:clearTaskOnLaunch="true"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.AppCompat.Light.Dialog">
-            <intent-filter>
-                <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />
+            android:theme="@style/AppTheme.NoUi">
+<!--            <intent-filter>-->
+<!--                <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />-->
 
-                <data android:mimeType="application/fido.uaf_asm+json" />
+<!--                <data android:mimeType="application/fido.uaf_asm+json" />-->
 
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".asm.AsmLockscreenActivity"
-            android:clearTaskOnLaunch="true"
-            android:launchMode="singleTop"
-            android:theme="@style/Theme.AppCompat.Light.Dialog">
-            <intent-filter>
-                <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />
-
-                <data android:mimeType="application/fido.uaf_asm+json" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
+<!--                <category android:name="android.intent.category.DEFAULT" />-->
+<!--            </intent-filter>-->
         </activity>
     </application>
 </manifest>

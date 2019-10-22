@@ -9,15 +9,11 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.hanko.fidouafclient.client.msg.MatchCriteria
 import io.hanko.fidouafclient.client.msg.UafRegistrationRequest
-import io.hanko.fidouafclient.utility.ForceIntDeserializer
-import io.hanko.fidouafclient.utility.ForceLongDeserializer
-import io.hanko.fidouafclient.utility.ForceStringDeserializer
-import io.hanko.fidouafclient.utility.MatchCriteriaDeserializer
+import io.hanko.fidouafclient.util.*
 import kotlinx.android.synthetic.main.activity_main.*
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
-import java.lang.Exception
 
 class MainActivity : AppCompatActivity() {
 
@@ -66,6 +62,7 @@ class MainActivity : AppCompatActivity() {
     private val matchCriteriaString_F30 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1},\"op\": \"Reg\",\"appID\": \"\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"authenticationAlgorithms\": [2]}]]}}]"
 
     private val extensionString_P1 = "[{\"header\": {\"upv\": {\"major\": 1,\"minor\": 1} ,\"exts\": [{\"id\": \"unknown_id\", \"data\": \"\", \"fail_if_unknown\": false}],\"op\": \"Reg\",\"appID\": \"https://uaf.example.com\"},\"challenge\": \"H9iW9yA9aAXF_lelQoi_DhUk514Ad8Tqv0zCnCqKDpo\",\"username\": \"hello@test.com\",\"policy\": {\"accepted\": [[{\"aaid\": [\"A4A4#0001\"]}]]}}]"
+    private val deregistrationString_P1 = "[{\"header\":{\"upv\":{\"major\": 1,\"minor\":1},\"op\":\"Dereg\",\"appID\":\"\"},\"authenticators\":[{\"aaid\":\"\",\"keyID\":\"\"}]}]"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,7 +72,7 @@ class MainActivity : AppCompatActivity() {
         buttonAuthenticate.setOnClickListener { startFidoClient(uafAuthenticateRequest.replace("<keyid>", keyId)); }
 
 //        testDeserialization()
-//        startFidoClient("{\"uafProtocolMessage\": \"${matchCriteriaString_P1.replace("\"", "\\\"")}\"}")
+//        startFidoClient("{\"uafProtocolMessage\": \"${deregistrationString_P1.replace("\"", "\\\"")}\"}")
     }
 
     private fun testDeserialization() {
