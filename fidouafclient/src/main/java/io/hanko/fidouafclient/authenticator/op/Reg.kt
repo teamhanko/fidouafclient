@@ -42,14 +42,16 @@ class Reg(context: Context) {
 
             val assertion = outputStream.toByteArray()
 
-            val registerOut = RegisterOut()
-            registerOut.assertionScheme = "UAFV1TLV"
-            registerOut.assertion = Base64.encodeToString(assertion, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+            val registerOut = RegisterOut(
+                    assertionScheme = "UAFV1TLV",
+                    assertion = Base64.encodeToString(assertion, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+            )
 
-            val asmResponseReg = ASMResponseReg()
-            asmResponseReg.statusCode = StatusCode.UAF_ASM_STATUS_OK.id
-            asmResponseReg.responseData = registerOut
-            asmResponseReg.exts = null
+            val asmResponseReg = ASMResponseReg(
+                    statusCode = StatusCode.UAF_ASM_STATUS_OK.id,
+                    responseData = registerOut,
+                    exts = null
+            )
 
             Preferences.setParam(sharedPreferences, Crypto.getKeyStoreAlias(asmRequestReg.args.appID, keyId)
                     ?: throw Exception("Could not generate KeyStoreAlias"), asmRequestReg.args.username)
@@ -169,8 +171,10 @@ class Reg(context: Context) {
 
     private fun generateErrorResponse(): String {
         return try {
-            val asmResponse = ASMResponse()
-            asmResponse.statusCode = StatusCode.UAF_ASM_STATUS_ERROR.id
+            val asmResponse = ASMResponse(
+                    statusCode = StatusCode.UAF_ASM_STATUS_ERROR.id,
+                    exts = null
+            )
             Util.objectMapper.writeValueAsString(asmResponse)
         } catch (ex: Exception) {
             Log.e(TAG, "Could not generate error response.", ex)

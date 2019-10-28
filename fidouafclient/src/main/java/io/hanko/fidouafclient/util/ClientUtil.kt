@@ -131,8 +131,13 @@ object ClientUtil {
     suspend fun getTrustedFacetsAsync(url: String): String? {
         return withTimeoutOrNull(5000) {
             return@withTimeoutOrNull ioScope.async {
-                Log.w(TAG, "Get TrustedFacetList from $url")
-                return@async getTrustedFacetList(url)
+                try {
+                    Log.w(TAG, "Get TrustedFacetList from $url")
+                    return@async getTrustedFacetList(url)
+                } catch (ex: Exception) {
+                    Log.e(TAG, "Error getting TrustedFacetList", ex)
+                    return@async null
+                }
             }.await()
         }
     }

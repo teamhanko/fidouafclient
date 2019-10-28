@@ -48,29 +48,6 @@ class Deregistration(val facetId: String, val channelBinding: String) {
         } else {
             sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
         }
-
-        //////////////////////////////////////////////////////////////
-        val appID = if (deregistrationRequest.header.appID == null || deregistrationRequest.header.appID.isEmpty()) {
-            facetId
-        } else {
-            deregistrationRequest.header.appID
-        }
-
-        if (Util.isValidHttpsUrl(appID)) {
-            if (skipTrustedFacetValidation) {
-                this.sendToAsm(appID, deregistrationRequest, sendToAsm, sendReturnIntent)
-            } else {
-                mainScope.launch {
-                    val trustedFacets = ClientUtil.getTrustedFacetsAsync(appID)
-                    if (trustedFacets != null && ClientUtil.isFacetIdValid(trustedFacets, Version(1, 0), facetId))
-                        this@Deregistration.sendToAsm(appID, deregistrationRequest, sendToAsm, sendReturnIntent)
-                    else
-                        sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.UNTRUSTED_FACET_ID, null)
-                }
-            }
-        } else {
-            this.sendToAsm(appID, deregistrationRequest, sendToAsm, sendReturnIntent)
-        }
     }
 
     private fun isValidAAID(aaid: String): Boolean {

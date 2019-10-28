@@ -15,11 +15,14 @@ class Dereg(context: Context) {
     fun dereg(asmRequestDereg: ASMRequestDereg): String {
         asmRequestDereg.args.map {
             Crypto.deleteKey(it.keyID, it.appID)
-            Preferences.deleteParam(sharedPreferences, Crypto.getKeyStoreAlias(it.appID, it.keyID) ?: "")
+            Preferences.deleteParam(sharedPreferences, Crypto.getKeyStoreAlias(it.appID, it.keyID)
+                    ?: "")
         }
 
-        val asmResponse = ASMResponse()
-        asmResponse.statusCode = StatusCode.UAF_ASM_STATUS_OK.id
+        val asmResponse = ASMResponse(
+                statusCode = StatusCode.UAF_ASM_STATUS_OK.id,
+                exts = null
+        )
         return Util.objectMapper.writeValueAsString(asmResponse)
     }
 }

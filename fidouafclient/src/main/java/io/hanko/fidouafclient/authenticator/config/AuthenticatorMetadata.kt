@@ -10,7 +10,7 @@ object AuthenticatorMetadata {
 
     val authenticator = Authenticator(
             title = "Hanko Fido UAF Client/Authenticator",
-            aaid = "A4A4#0001",
+            aaid = "006F#0001",
             description = "Hanko UAF Client/Authenticator Combo for Android",
             supportedUAFVersions = supportedVersions,
             assertionScheme = "UAFV1TLV",

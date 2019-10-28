@@ -3,7 +3,7 @@
     <string name="uafclient_biometric_prompt_title_reg">Registrierung</string>
     <string name="uafclient_biometric_prompt_title_auth">Authentifizierung</string>
     <string name="uafclient_biometric_prompt_description_reg">Authentifiziere dich um einen Schlüssel zu erstellen</string>
-    <string name="uafclient_biometric_prompt_description_auth">AAuthentifiziere dich um einen Schlüssel zu benutzen</string>
+    <string name="uafclient_biometric_prompt_description_auth">Authentifiziere dich um einen Schlüssel zu benutzen</string>
 
     <string name="uafclient_account_chooser_title">Wähle deinen Schlüssel</string>
 </resources>

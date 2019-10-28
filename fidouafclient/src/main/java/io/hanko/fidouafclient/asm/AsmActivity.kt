@@ -59,8 +59,13 @@ class AsmActivity : AppCompatActivity() {
 
     private fun processGetInfo() {
         val biometricManager = BiometricManager.from(this)
-        val asmResponseGetInfo = ASMResponseGetInfo()
-        asmResponseGetInfo.responseData = GetInfoOut(AuthenticatorInfo.fromAuthenticator(AuthenticatorMetadata.authenticator, biometricManager.canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS))
+        val asmResponseGetInfo = ASMResponseGetInfo(
+                responseData = GetInfoOut(Authenticators = listOf(
+                        AuthenticatorInfo.fromAuthenticator(AuthenticatorMetadata.authenticator, biometricManager.canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS)
+                )),
+                statusCode = StatusCode.UAF_ASM_STATUS_OK.id,
+                exts = null
+        )
         sendResponse(Util.objectMapper.writeValueAsString(asmResponseGetInfo))
     }
 
@@ -180,12 +185,10 @@ class AsmActivity : AppCompatActivity() {
     }
 
     private fun sendErrorResponse(statusCode: StatusCode?) {
-        val asmResponse = ASMResponse()
-        if (statusCode != null) {
-            asmResponse.statusCode = statusCode.id
-        } else {
-            asmResponse.statusCode = StatusCode.UAF_ASM_STATUS_ERROR.id
-        }
+        val asmResponse = ASMResponse(
+                statusCode = (statusCode ?: StatusCode.UAF_ASM_STATUS_ERROR).id,
+                exts = null
+        )
         sendResponse(Util.objectMapper.writeValueAsString(asmResponse))
     }
 

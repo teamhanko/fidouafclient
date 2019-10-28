@@ -1,6 +1,6 @@
 package io.hanko.fidouafclient.authenticator.util.tlv;
 
-public enum TagsEnum {
+enum class TagsEnum(val id: Int) {
 
     UAF_CMD_STATUS_ERR_UNKNOWN (0x01),
     TAG_UAFV1_REG_ASSERTION(0x3E01),
@@ -23,20 +23,4 @@ public enum TagsEnum {
     TAG_EXTENSION_NON_CRITICAL(0x3E12),
     TAG_EXTENSION_ID(0x2E13),
     TAG_EXTENSION_DATA(0x2E14)
-    ;
-
-    final public int id;
-
-    TagsEnum (int id){
-        this.id = id;
-    }
-
-    public static TagsEnum get(int id){
-        for (TagsEnum tag : TagsEnum.values()) {
-            if (tag.id == id){
-                return tag;
-            }
-        }
-        return null;
-    }
 }

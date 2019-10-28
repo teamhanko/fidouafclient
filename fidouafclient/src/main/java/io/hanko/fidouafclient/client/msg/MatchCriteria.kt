@@ -108,7 +108,7 @@ class MatchCriteria
         }
 
         val requestedKeyAliases = keyIDs.mapNotNull { Crypto.getKeyStoreAlias(appId, it) }
-        val keyStore = KeyStore.getInstance(Crypto.KEYSTORE)
+        val keyStore = KeyStore.getInstance(Crypto.KEYSTORE).apply { load(null) }
         return keyStore.aliases().toList().any { requestedKeyAliases.contains(it) }
     }
 }

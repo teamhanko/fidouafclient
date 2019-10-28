@@ -3,4 +3,7 @@
     <string name="authenticate">Authenticate</string>
     <string name="register">Register</string>
     <string name="header">FIDO UAF client demo</string>
+    <string name="result">Result:</string>
+    <string name="result_errorcode">ErrorCode:</string>
+    <string name="deregister">Deregister</string>
 </resources>

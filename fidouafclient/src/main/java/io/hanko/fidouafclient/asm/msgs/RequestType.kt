@@ -1,6 +1,6 @@
 package io.hanko.fidouafclient.asm.msgs;
 
-public enum RequestType {
+enum class RequestType {
     GetInfo,
     Register,
     Authenticate,

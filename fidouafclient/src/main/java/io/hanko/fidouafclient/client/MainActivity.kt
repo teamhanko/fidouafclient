@@ -134,7 +134,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun validateUafRequests(requests: List<UafRequest>): Boolean {
-        return requests.groupBy { V(it.header.upv.major, it.header.upv.major) }
+        return requests.groupBy { V(it.header.upv.major, it.header.upv.minor) }
                 .none { it.value.size > 1 } && // check that only 1 request per version exists
                 requests.none { it.header.appID?.length ?: 0 > 512 } &&
                 requests.none { it.header.serverData?.length ?: 0 > 1536 || it.header.serverData?.length ?: 1 < 1 } && // check that serverData length is not larger than 1536 and not smaller than 1 if it exists
@@ -247,7 +247,7 @@ class MainActivity : AppCompatActivity() {
 
     fun sendToAsm(requestCode: Int): (message: String) -> Unit {
         return { message: String ->
-            //        Intent asmIntent = new Intent("org.fidoalliance.intent.FIDO_OPERATION");
+//            val asmIntent = Intent("org.fidoalliance.intent.FIDO_OPERATION")
             val asmIntent = Intent(this, AsmActivity::class.java) // send RequestType to our ASM and don´t give the User the choice if there are more than our ASM
             asmIntent.type = "application/fido.uaf_asm+json"
             asmIntent.putExtra(Util.INTENT_MESSAGE_NAME, message)

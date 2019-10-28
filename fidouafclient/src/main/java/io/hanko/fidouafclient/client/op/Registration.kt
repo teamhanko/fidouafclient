@@ -85,11 +85,12 @@ class Registration(val facetId: String, val channelBinding: String) {
                 Util.objectMapper.readValue(channelBinding, ChannelBinding::class.java)
         )
 
-        val registerIn = RegisterIn()
-        registerIn.attestationType = 15880 // Attestation Surrogate
-        registerIn.username = registrationRequest.username
-        registerIn.appID = appID
-        registerIn.finalChallenge = Base64.encodeToString(Util.objectMapper.writeValueAsString(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+        val registerIn = RegisterIn(
+                appID = appID!!,
+                username = registrationRequest.username,
+                attestationType = 15880, // Attestation Surrogate
+                finalChallenge = Base64.encodeToString(Util.objectMapper.writeValueAsString(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+        )
 
         val asmRequestReg = ASMRequestReg(
                 requestType = RequestType.Register,
