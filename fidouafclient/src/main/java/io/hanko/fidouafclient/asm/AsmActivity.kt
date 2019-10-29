@@ -66,7 +66,7 @@ class AsmActivity : AppCompatActivity() {
                 statusCode = StatusCode.UAF_ASM_STATUS_OK.id,
                 exts = null
         )
-        sendResponse(Util.objectMapper.writeValueAsString(asmResponseGetInfo))
+        sendResponse(Util.moshi.adapter(ASMResponseGetInfo::class.java).toJson(asmResponseGetInfo))
     }
 
     private fun startRegistration(request: ASMRequestReg) {
@@ -189,7 +189,7 @@ class AsmActivity : AppCompatActivity() {
                 statusCode = (statusCode ?: StatusCode.UAF_ASM_STATUS_ERROR).id,
                 exts = null
         )
-        sendResponse(Util.objectMapper.writeValueAsString(asmResponse))
+        sendResponse(Util.moshi.adapter(ASMResponse::class.java).toJson(asmResponse))
     }
 
     private fun sendResponse(asmResponse: String) {

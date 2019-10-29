@@ -2,28 +2,21 @@ package io.hanko.fidouafclient.util
 
 import android.util.Base64
 import android.util.Log
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.module.SimpleModule
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import io.hanko.fidouafclient.client.msg.MatchCriteria
+import com.squareup.moshi.Moshi
 import java.net.URL
 
 object Util {
 
     const val INTENT_MESSAGE_NAME = "message"
-    val objectMapper: ObjectMapper = ObjectMapper()
-            .registerKotlinModule()
-            .registerModule(
-                    SimpleModule()
-                            .addDeserializer(String::class.java, ForceStringDeserializer())
-                            .addDeserializer(Int::class.java, ForceIntDeserializer())
-                            .addDeserializer(Long::class.java, ForceLongDeserializer())
-                            .addDeserializer(MatchCriteria::class.java, MatchCriteriaDeserializer())
-            )
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+
+    val moshi: Moshi = Moshi.Builder()
+            .add(OptionalStringJsonAdapter())
+            .add(OptionalLongJsonAdapter())
+            .add(OptionalIntJsonAdapter())
+            .add(StringJsonAdapter())
+            .add(IntJsonAdapter())
+            .add(LongJsonAdapter())
+            .build()
 
     fun isValidHttpsUrl(urlString: String?): Boolean {
         return try {

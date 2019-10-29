@@ -1,9 +1,11 @@
 package io.hanko.fidouafclient.asm.msgs.response;
 
+import com.squareup.moshi.JsonClass
 import io.hanko.fidouafclient.authenticator.msgs.Authenticator;
 import io.hanko.fidouafclient.client.msg.DisplayPNGCharacteristicsDescriptor;
 import io.hanko.fidouafclient.client.msg.Version;
 
+@JsonClass(generateAdapter = true)
 class AuthenticatorInfo (
     val authenticatorIndex: Short,
     val asmVersions: List<Version>,

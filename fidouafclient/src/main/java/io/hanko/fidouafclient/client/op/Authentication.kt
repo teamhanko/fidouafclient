@@ -87,11 +87,11 @@ class Authentication(val facetId: String, val channelBinding: String) {
 
         val authenticationResponse = listOf(AuthenticationResponse(
                 authenticationRequest!!.header,
-                Base64.encodeToString(Util.objectMapper.writeValueAsString(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
+                Base64.encodeToString(Util.moshi.adapter(FinalChallengeParams::class.java).toJson(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
                 listOf(authenticationAssertion)
         ))
 
-        sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_ERROR, Util.objectMapper.writeValueAsString(authenticationResponse))
+        sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_ERROR, Util.moshi.adapter(Array<AuthenticationResponse>::class.java).toJson(authenticationResponse.toTypedArray()))
     }
 
     private fun sendToAsm(authenticationRequest: UafAuthenticationRequest, sendToAsm: (String) -> Unit, sendReturnIntent: (UAFIntentType?, ErrorCode, String?) -> Unit) {
@@ -111,7 +111,8 @@ class Authentication(val facetId: String, val channelBinding: String) {
                 ?.filter { !disallowedKeyIds.contains(it) }
                 ?: emptyList()
 
-        finalChallengeParams = FinalChallengeParams(appID!!, authenticationRequest.challenge, facetId, Util.objectMapper.readValue(channelBinding, ChannelBinding::class.java))
+
+        finalChallengeParams = FinalChallengeParams(appID!!, authenticationRequest.challenge, facetId, Util.moshi.adapter(ChannelBinding::class.java).fromJson(channelBinding)!!)
 
         if (filteredKeyIds.isEmpty()) {
             sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_SUITABLE_AUTHENTICATOR, null)
@@ -120,7 +121,7 @@ class Authentication(val facetId: String, val channelBinding: String) {
 
         val authenticateIn = AuthenticateIn(
                 appID = appID!!,
-                finalChallenge = Base64.encodeToString(Util.objectMapper.writeValueAsString(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
+                finalChallenge = Base64.encodeToString(Util.moshi.adapter(FinalChallengeParams::class.java).toJson(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
                 transaction = if (authenticationRequest.transaction != null && authenticationRequest.transaction.isNotEmpty()) {
                     authenticationRequest.transaction.find { it.contentType == "text/plain" }
                 } else {
@@ -141,6 +142,6 @@ class Authentication(val facetId: String, val channelBinding: String) {
                 exts = null
         )
 
-        sendToAsm(Util.objectMapper.writeValueAsString(asmRequestAuth))
+        sendToAsm(Util.moshi.adapter(ASMRequestAuth::class.java).toJson(asmRequestAuth))
     }
 }

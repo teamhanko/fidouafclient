@@ -1,7 +1,8 @@
 package io.hanko.fidouafclient.client.msg.trustedFacets;
 
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.squareup.moshi.JsonClass
 
-class TrustedFacetsList (
-    @JsonProperty(required = true) val trustedFacets: List<TrustedFacets>
+@JsonClass(generateAdapter = true)
+class TrustedFacetsList(
+        val trustedFacets: List<TrustedFacets>
 )

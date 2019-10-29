@@ -1,26 +1,27 @@
 package io.hanko.fidouafclient.client.msg
 
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.squareup.moshi.JsonClass
 import io.hanko.fidouafclient.authenticator.msgs.Authenticator
 import io.hanko.fidouafclient.util.Crypto
 import io.hanko.fidouafclient.util.Util
 import java.security.KeyStore
 
+@JsonClass(generateAdapter = true)
 class MatchCriteria
 (
-        @JsonProperty(required = false) val aaid: List<String>? = null,
-        @JsonProperty(required = false) val vendorID: List<String>? = null,
-        @JsonProperty(required = false) val keyIDs: List<String>? = null,
-        @JsonProperty(required = false) val userVerification: Long? = null,
-        @JsonProperty(required = false) val keyProtection: Int? = null,
-        @JsonProperty(required = false) val matcherProtection: Int? = null,
-        @JsonProperty(required = false) val attachmentHint: Long? = null,
-        @JsonProperty(required = false) val tcDisplay: Int? = null,
-        @JsonProperty(required = false) val authenticationAlgorithms: List<Int>? = null,
-        @JsonProperty(required = false) val assertionSchemes: List<String>? = null,
-        @JsonProperty(required = false) val attestationTypes: List<Int>? = null,
-        @JsonProperty(required = false) val authenticatorVersion: Int? = null,
-        @JsonProperty(required = false) val exts: List<Extension>? = null
+        val aaid: List<String>? = null,
+        val vendorID: List<String>? = null,
+        val keyIDs: List<String>? = null,
+        val userVerification: Long? = null,
+        val keyProtection: Int? = null,
+        val matcherProtection: Int? = null,
+        val attachmentHint: Long? = null,
+        val tcDisplay: Int? = null,
+        val authenticationAlgorithms: List<Int>? = null,
+        val assertionSchemes: List<String>? = null,
+        val attestationTypes: List<Int>? = null,
+        val authenticatorVersion: Int? = null,
+        val exts: List<Extension>? = null
 ) {
 
     fun isValid(): Boolean {

@@ -1,10 +1,11 @@
-package io.hanko.fidouafclient.authenticator.msgs;
+package io.hanko.fidouafclient.authenticator.msgs
 
 
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.squareup.moshi.JsonClass
 import io.hanko.fidouafclient.client.msg.DisplayPNGCharacteristicsDescriptor;
 import io.hanko.fidouafclient.client.msg.Version;
 
+@JsonClass(generateAdapter = true)
 class Authenticator (
         val title: String,
         val aaid: String,
@@ -17,7 +18,7 @@ class Authenticator (
         val keyProtection: Short,
         val matcherProtection: Short,
         val attachmentHint: Long,
-        @get:JsonProperty("isSecondFactorOnly") val isSecondFactorOnly: Boolean,
+        val isSecondFactorOnly: Boolean,
         val tcDisplay: Short,
         val tcDisplayContentType: String,
         val tcDisplayPNGCharacteristics: DisplayPNGCharacteristicsDescriptor?,

@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.hanko.fidouafclient.asm.AsmActivity
 import io.hanko.fidouafclient.asm.msgs.StatusCode
 import io.hanko.fidouafclient.asm.msgs.response.ASMResponse
@@ -22,7 +21,7 @@ import io.hanko.fidouafclient.client.op.Registration
 import io.hanko.fidouafclient.client.msg.client.ErrorCode
 import io.hanko.fidouafclient.util.ClientUtil
 import io.hanko.fidouafclient.util.Util
-import io.hanko.fidouafclient.util.Util.objectMapper
+import io.hanko.fidouafclient.util.Util.moshi
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -46,6 +45,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Log.w(TAG, "Time: ${System.currentTimeMillis()} onCreate")
 
         setFinishOnTouchOutside(false)
 
@@ -74,13 +75,14 @@ class MainActivity : AppCompatActivity() {
                 listOf(AuthenticatorMetadata.authenticator)
         )
 
-        sendDiscoveryReturnIntent(objectMapper.writeValueAsString(discoveryData))
+        sendDiscoveryReturnIntent(moshi.adapter(DiscoveryData::class.java).toJson(discoveryData))
     }
 
     private fun processCheckPolicyRequest(extras: Bundle) {
         val message: String? = extras.getString(Util.INTENT_MESSAGE_NAME)
         if (message != null) {
-            val uafOperationMessageString = objectMapper.readValue(message, UAFMessage::class.java).uafProtocolMessage
+            val uafOperationMessageString = moshi.adapter(UAFMessage::class.java).fromJson(message)?.uafProtocolMessage
+                    ?: ""
             val requests = parseUafOperationMessage(uafOperationMessageString)
             if (requests.isEmpty()) {
                 sendReturnIntent(UAFIntentType.CHECK_POLICY_RESULT, ErrorCode.PROTOCOL_ERROR, null)
@@ -108,11 +110,14 @@ class MainActivity : AppCompatActivity() {
         val channelBinding: String? = extras.getString("channelBindings")
         val message: String? = extras.getString(Util.INTENT_MESSAGE_NAME)
         val skipTrustedFacetValidation: Boolean = extras.getBoolean("skipTrustedFacetValidation", false)
+        Log.w("Message", "$message")
         if (channelBinding != null && message != null) {
             try {
-                val uafOperationMessage = objectMapper.readValue(message, UAFMessage::class.java).uafProtocolMessage
+                val uafOperationMessage = moshi.adapter(UAFMessage::class.java).fromJson(message)?.uafProtocolMessage
+                        ?: ""
                 processUafRequest(uafOperationMessage, channelBinding, skipTrustedFacetValidation)
             } catch (ex: Exception) {
+                Log.w(TAG, "Error while processing UAF request", ex)
                 sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.PROTOCOL_ERROR, null)
             }
         } else {
@@ -185,16 +190,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun parseUafOperationMessage(uafOperationMessage: String): List<UafRequest> {
-        val requests: List<UafRequest> = objectMapper.readValue(uafOperationMessage)
+        val requests: List<UafRequest> = moshi.adapter(Array<UafRequest>::class.java).fromJson(uafOperationMessage)?.toList()
+                ?: emptyList()
         if (requests.isEmpty()) {
             return emptyList()
         }
 
         return when (requests[0].header.op) {
-            Operation.Reg -> objectMapper.readValue<List<UafRegistrationRequest>>(uafOperationMessage)
-            Operation.Auth -> objectMapper.readValue<List<UafAuthenticationRequest>>(uafOperationMessage)
-            Operation.Dereg -> objectMapper.readValue<List<UafDeregistrationRequest>>(uafOperationMessage)
-        }
+            Operation.Reg ->
+                moshi.adapter(Array<UafRegistrationRequest>::class.java).fromJson(uafOperationMessage)?.toList()
+            Operation.Auth ->
+                moshi.adapter(Array<UafAuthenticationRequest>::class.java).fromJson(uafOperationMessage)?.toList()
+            Operation.Dereg ->
+                moshi.adapter(Array<UafDeregistrationRequest>::class.java).fromJson(uafOperationMessage)?.toList()
+        } ?: emptyList()
     }
 
     /**
@@ -217,6 +226,7 @@ class MainActivity : AppCompatActivity() {
      * @param message
      */
     fun sendReturnIntent(uafIntentType: UAFIntentType?, errorCode: ErrorCode, message: String?) {
+        Log.w(TAG, "Time: ${System.currentTimeMillis()} sendReturnIntent")
         val uafIntentTypeString = uafIntentType?.name ?: "undefined"
         val resultIntent = Intent()
         if (message != null) {
@@ -247,7 +257,7 @@ class MainActivity : AppCompatActivity() {
 
     fun sendToAsm(requestCode: Int): (message: String) -> Unit {
         return { message: String ->
-//            val asmIntent = Intent("org.fidoalliance.intent.FIDO_OPERATION")
+            //            val asmIntent = Intent("org.fidoalliance.intent.FIDO_OPERATION")
             val asmIntent = Intent(this, AsmActivity::class.java) // send RequestType to our ASM and don´t give the User the choice if there are more than our ASM
             asmIntent.type = "application/fido.uaf_asm+json"
             asmIntent.putExtra(Util.INTENT_MESSAGE_NAME, message)
@@ -266,29 +276,40 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (data != null) {
-            // Operation is identified by requestCode
-            val message = data.getStringExtra(Util.INTENT_MESSAGE_NAME)
-            val asmResponse = objectMapper.readValue(message, ASMResponse::class.java)
-            if (requestCode == ASM_REG_REQUEST_CODE) {
-                if (asmResponse.statusCode == StatusCode.UAF_ASM_STATUS_OK.id)
-                    registrationProcess!!.processASMResponse(objectMapper.readValue(message, ASMResponseReg::class.java).responseData, this::sendReturnIntent)
-                else
-                    sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, convertStatusCodeToErrorCode(asmResponse.statusCode), null)
-            } else if (requestCode == ASM_AUTH_REQUEST_CODE) {
-                if (asmResponse.statusCode == StatusCode.UAF_ASM_STATUS_OK.id)
-                    authenticationProcess!!.processASMResponse(objectMapper.readValue(message, ASMResponseAuth::class.java).responseData, this::sendReturnIntent)
-                else
-                    sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, convertStatusCodeToErrorCode(asmResponse.statusCode), null)
-            } else {
-                if (asmResponse.statusCode == StatusCode.UAF_ASM_STATUS_OK.id) {
-                    deregistrationProcess!!.processASMResponse(this::sendReturnIntent)
+        try {
+            if (data != null) {
+                // Operation is identified by requestCode
+                val message = data.getStringExtra(Util.INTENT_MESSAGE_NAME)
+                val asmResponse = moshi.adapter(ASMResponse::class.java).fromJson(message ?: "")
+                if (requestCode == ASM_REG_REQUEST_CODE && asmResponse != null) {
+                    if (asmResponse.statusCode == StatusCode.UAF_ASM_STATUS_OK.id) {
+//                    registrationProcess!!.p
+                        val responseData = moshi.adapter(ASMResponseReg::class.java).fromJson(message!!)?.responseData
+                                ?: throw IllegalArgumentException("Response Data must not be empty")
+                        registrationProcess!!.processASMResponse(responseData, this::sendReturnIntent)
+                    } else
+                        sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, convertStatusCodeToErrorCode(asmResponse.statusCode), null)
+                } else if (requestCode == ASM_AUTH_REQUEST_CODE && asmResponse != null) {
+                    if (asmResponse.statusCode == StatusCode.UAF_ASM_STATUS_OK.id) {
+                        val responseData = moshi.adapter(ASMResponseAuth::class.java).fromJson(message!!)?.responseData
+                                ?: throw IllegalArgumentException("Response Data must not be empty")
+                        authenticationProcess!!.processASMResponse(responseData, this::sendReturnIntent)
+                    } else
+                        sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, convertStatusCodeToErrorCode(asmResponse.statusCode), null)
+                } else if (requestCode == ASM_DEREG_REQUEST_CODE && asmResponse != null) {
+                    if (asmResponse.statusCode == StatusCode.UAF_ASM_STATUS_OK.id) {
+                        deregistrationProcess!!.processASMResponse(this::sendReturnIntent)
+                    } else {
+                        sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, convertStatusCodeToErrorCode(asmResponse.statusCode), null)
+                    }
                 } else {
-                    sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, convertStatusCodeToErrorCode(asmResponse.statusCode), null)
+                    sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.UNKNOWN, null)
                 }
+            } else {
+                sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.USER_CANCELLED, null)
             }
-        } else {
-            sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.USER_CANCELLED, null)
+        } catch (ex: Exception) {
+            sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.UNKNOWN, null)
         }
     }
 

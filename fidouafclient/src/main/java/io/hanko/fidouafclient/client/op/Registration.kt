@@ -70,11 +70,11 @@ class Registration(val facetId: String, val channelBinding: String) {
 
         val registrationResponse = listOf(RegistrationResponse(
                 registrationRequest!!.header,
-                Base64.encodeToString(Util.objectMapper.writeValueAsString(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
+                Base64.encodeToString(Util.moshi.adapter(FinalChallengeParams::class.java).toJson(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
                 Collections.singletonList(registrationAssertion)
         ))
 
-        sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_ERROR, Util.objectMapper.writeValueAsString(registrationResponse))
+        sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_ERROR, Util.moshi.adapter(Array<RegistrationResponse>::class.java).toJson(registrationResponse.toTypedArray()))
     }
 
     private fun sendToAsm(registrationRequest: UafRegistrationRequest, sendToAsm: (message: String) -> Unit, sendReturnIntent: (UAFIntentType?, ErrorCode, String?) -> Unit) {
@@ -82,14 +82,14 @@ class Registration(val facetId: String, val channelBinding: String) {
                 appID!!,
                 registrationRequest.challenge,
                 facetId,
-                Util.objectMapper.readValue(channelBinding, ChannelBinding::class.java)
+                Util.moshi.adapter(ChannelBinding::class.java).fromJson(channelBinding)!!
         )
 
         val registerIn = RegisterIn(
                 appID = appID!!,
                 username = registrationRequest.username,
                 attestationType = 15880, // Attestation Surrogate
-                finalChallenge = Base64.encodeToString(Util.objectMapper.writeValueAsString(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+                finalChallenge = Base64.encodeToString(Util.moshi.adapter(FinalChallengeParams::class.java).toJson(finalChallengeParams).toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
         )
 
         val asmRequestReg = ASMRequestReg(
@@ -101,7 +101,7 @@ class Registration(val facetId: String, val channelBinding: String) {
         )
 
         try { // try-catch as workaround for Huawei smartphones, because they won´t call method
-            sendToAsm(Util.objectMapper.writeValueAsString(asmRequestReg)) //, MainASM_REG_REQUEST_CODE, ClientUtil.getAsmFromPolicy(registrationRequest.policy, appID!!))
+            sendToAsm(Util.moshi.adapter(ASMRequestReg::class.java).toJson(asmRequestReg)) //, MainASM_REG_REQUEST_CODE, ClientUtil.getAsmFromPolicy(registrationRequest.policy, appID!!))
         } catch (ex: Exception) {
             Log.e(TAG, "Error while sending asmRegistrationRequest to ASM", ex)
             sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_SUITABLE_AUTHENTICATOR, null)

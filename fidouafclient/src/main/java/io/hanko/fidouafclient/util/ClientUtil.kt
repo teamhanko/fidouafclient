@@ -70,7 +70,7 @@ object ClientUtil {
 
     fun isFacetIdValid(trustedFacetsJson: String, version: Version, facetId: String): Boolean {
         return try {
-            val trustedFacetList = Util.objectMapper.readValue(trustedFacetsJson, TrustedFacetsList::class.java)
+            val trustedFacetList = Util.moshi.adapter(TrustedFacetsList::class.java).fromJson(trustedFacetsJson) ?: TrustedFacetsList(emptyList())
 
             trustedFacetList.trustedFacets.filter { it.version?.major == version.major && it.version.minor == version.minor }.any {
                 it.ids?.contains(facetId) ?: false

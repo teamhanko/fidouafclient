@@ -83,7 +83,7 @@ class Deregistration(val facetId: String, val channelBinding: String) {
             )
 
             try {
-                sendToAsm(Util.objectMapper.writeValueAsString(asmRequestDereg))
+                sendToAsm(Util.moshi.adapter(ASMRequestDereg::class.java).toJson(asmRequestDereg))
             } catch (ex: Exception) {
                 Log.e("Deregistration", "Error while sending asmDeregRequest to ASM", ex)
                 sendReturnIntent(UAFIntentType.UAF_OPERATION_RESULT, ErrorCode.NO_SUITABLE_AUTHENTICATOR, null)

@@ -60,7 +60,7 @@ class Auth {
                         exts = null
                 )
 
-                return Util.objectMapper.writeValueAsString(asmResponseAuth)
+                return Util.moshi.adapter(ASMResponseAuth::class.java).toJson(asmResponseAuth)
             } else {
                 return generateErrorResponse()
             }
@@ -194,7 +194,7 @@ class Auth {
                     statusCode = StatusCode.UAF_ASM_STATUS_ERROR.id,
                     exts = null
             )
-            Util.objectMapper.writeValueAsString(asmResponse)
+            Util.moshi.adapter(ASMResponse::class.java).toJson(asmResponse)
         } catch (ex: Exception) {
             Log.e(TAG, "Could not generate error response.", ex)
             ""

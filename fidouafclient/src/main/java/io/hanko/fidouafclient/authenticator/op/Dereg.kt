@@ -23,6 +23,6 @@ class Dereg(context: Context) {
                 statusCode = StatusCode.UAF_ASM_STATUS_OK.id,
                 exts = null
         )
-        return Util.objectMapper.writeValueAsString(asmResponse)
+        return Util.moshi.adapter(ASMResponse::class.java).toJson(asmResponse)
     }
 }

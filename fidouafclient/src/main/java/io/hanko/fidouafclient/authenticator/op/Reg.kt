@@ -55,7 +55,7 @@ class Reg(context: Context) {
 
             Preferences.setParam(sharedPreferences, Crypto.getKeyStoreAlias(asmRequestReg.args.appID, keyId)
                     ?: throw Exception("Could not generate KeyStoreAlias"), asmRequestReg.args.username)
-            return Util.objectMapper.writeValueAsString(asmResponseReg)
+            return Util.moshi.adapter(ASMResponseReg::class.java).toJson(asmResponseReg)
         } catch (ex: Exception) {
             Log.e(TAG, "Registration Attestation could not be generated", ex)
         }
@@ -175,7 +175,7 @@ class Reg(context: Context) {
                     statusCode = StatusCode.UAF_ASM_STATUS_ERROR.id,
                     exts = null
             )
-            Util.objectMapper.writeValueAsString(asmResponse)
+            Util.moshi.adapter(ASMResponse::class.java).toJson(asmResponse)
         } catch (ex: Exception) {
             Log.e(TAG, "Could not generate error response.", ex)
             ""

@@ -1,5 +1,8 @@
 package io.hanko.fidouafclient.client.msg;
 
+import com.squareup.moshi.JsonClass
+
+@JsonClass(generateAdapter = true)
 class DisplayPNGCharacteristicsDescriptor (
 	val width: Long,
 	val height: Long,
