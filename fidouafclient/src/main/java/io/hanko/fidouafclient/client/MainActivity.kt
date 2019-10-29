@@ -46,8 +46,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Log.w(TAG, "Time: ${System.currentTimeMillis()} onCreate")
-
         setFinishOnTouchOutside(false)
 
         componentName = ComponentName(applicationContext, MainActivity::class.java).flattenToString()
@@ -226,7 +224,6 @@ class MainActivity : AppCompatActivity() {
      * @param message
      */
     fun sendReturnIntent(uafIntentType: UAFIntentType?, errorCode: ErrorCode, message: String?) {
-        Log.w(TAG, "Time: ${System.currentTimeMillis()} sendReturnIntent")
         val uafIntentTypeString = uafIntentType?.name ?: "undefined"
         val resultIntent = Intent()
         if (message != null) {
