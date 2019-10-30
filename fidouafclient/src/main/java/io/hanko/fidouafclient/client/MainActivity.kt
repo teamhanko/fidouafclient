@@ -108,7 +108,6 @@ class MainActivity : AppCompatActivity() {
         val channelBinding: String? = extras.getString("channelBindings")
         val message: String? = extras.getString(Util.INTENT_MESSAGE_NAME)
         val skipTrustedFacetValidation: Boolean = extras.getBoolean("skipTrustedFacetValidation", false)
-        Log.w("Message", "$message")
         if (channelBinding != null && message != null) {
             try {
                 val uafOperationMessage = moshi.adapter(UAFMessage::class.java).fromJson(message)?.uafProtocolMessage

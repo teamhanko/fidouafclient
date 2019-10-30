@@ -73,11 +73,17 @@ class AsmActivity : AppCompatActivity() {
         val newKeyId = Crypto.generateKeyID(request.args.appID)
 
         if (newKeyId != null && Crypto.generateKeyPair(newKeyId, request.args.appID)) {
-            val biometricPrompt = getBiometricPrompt(processRegistration(request, newKeyId))
+            val biometricPrompt = getBiometricPrompt(processRegistration(request, newKeyId), processRegistrationError(request.args.appID, newKeyId))
             val promptInfo = getPromptInfo(R.string.uafclient_biometric_prompt_title_reg, R.string.uafclient_biometric_prompt_description_reg)
             biometricPrompt.authenticate(promptInfo)
         } else {
             sendErrorResponse(StatusCode.UAF_ASM_STATUS_ERROR)
+        }
+    }
+
+    private fun processRegistrationError(appId: String, keyId: String): () -> Unit {
+        return {
+            Crypto.deleteKey(keyId, appId) // delete key if registration failed
         }
     }
 
@@ -114,7 +120,7 @@ class AsmActivity : AppCompatActivity() {
     }
 
     private fun startBiometricPromptForAuthentication(request: ASMRequestAuth) {
-        val biometricPrompt = getBiometricPrompt(processAuthentication(request))
+        val biometricPrompt = getBiometricPrompt(processAuthentication(request), null)
         val promptInfo = getPromptInfo(
                 R.string.uafclient_biometric_prompt_title_auth,
                 R.string.uafclient_biometric_prompt_description_auth,
@@ -132,7 +138,7 @@ class AsmActivity : AppCompatActivity() {
                 .build()
     }
 
-    private fun getBiometricPrompt(processRequest: () -> Unit): BiometricPrompt {
+    private fun getBiometricPrompt(processRequest: () -> Unit, processError: (() -> Unit)?): BiometricPrompt {
         val executor = Executors.newSingleThreadExecutor()
         return BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
@@ -148,11 +154,13 @@ class AsmActivity : AppCompatActivity() {
                     BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL -> StatusCode.UAF_ASM_STATUS_USER_NOT_ENROLLED
                     else -> StatusCode.UAF_ASM_STATUS_ERROR
                 }
+                processError?.let { it() }
                 sendErrorResponse(statusCode)
             }
 
             override fun onAuthenticationFailed() {
                 super.onAuthenticationFailed()
+                processError?.let { it() }
                 sendErrorResponse(StatusCode.UAF_ASM_STATUS_ACCESS_DENIED)
             }
 
