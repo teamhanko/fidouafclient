@@ -18,15 +18,15 @@
             </intent-filter>
         </activity>
 
-<!--        <activity android:name="io.hanko.fidouafclient.client.MainActivity">
-            <intent-filter tools:node="removeAll">
-                <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />
+        <!--        <activity android:name="io.hanko.fidouafclient.FidoUafClient">
+                    <intent-filter tools:node="removeAll">
+                        <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />
 
-                <data android:mimeType="application/fido.uaf_client+json" />
+                        <data android:mimeType="application/fido.uaf_client+json" />
 
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>-->
+                        <category android:name="android.intent.category.DEFAULT" />
+                    </intent-filter>
+                </activity>-->
 
     </application>
 

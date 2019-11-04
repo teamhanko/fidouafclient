@@ -1,4 +1,4 @@
-package io.hanko.fidouafclient.client
+package io.hanko.fidouafclient
 
 import android.content.ComponentName
 import android.content.Intent
@@ -27,9 +27,9 @@ import org.json.JSONObject
 
 data class V(val major: Int, val minor: Int)
 
-class MainActivity : AppCompatActivity() {
+class FidoUafClient : AppCompatActivity() {
 
-    private val TAG: String = "MainActivity"
+    private val TAG: String = "FidoUafClient"
     private var componentName: String? = null
     private var facetId: String? = null
 
@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
 
         setFinishOnTouchOutside(false)
 
-        componentName = ComponentName(applicationContext, MainActivity::class.java).flattenToString()
+        componentName = ComponentName(applicationContext, FidoUafClient::class.java).flattenToString()
         val callingIntent = intent
         val extras = callingIntent.extras
 

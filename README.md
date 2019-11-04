@@ -8,9 +8,20 @@ FIDO UAF Client & Authenticator Combo for Android by Hanko.
 
 > For more information on how FIDO UAF works, see [FIDO Alliance](https://fidoalliance.org/specifications/download/).
 
+## Breaking Changes
+
+### 0.x.x -> 1.x.x
+
+From 1.0.0 the keyIds are generated in a different, not backwards compatible way. So all before generated keys are not known by the authenticator and can not be used anymore.
+
 ## Installation
 
 The package is distributed through JCenter.
+
+# Requirements
+
+- min. android SDK version: 23
+- secure keyguard (biometrics, pin, pattern, etc.)
 
 ### Gradle
 
@@ -21,7 +32,7 @@ The package is distributed through JCenter.
 ### Call FIDO Client
 
 ```java
-Intent intent = new Intent(context, io.hanko.fidouafclient.client.MainActivity.class);
+Intent intent = new Intent(context, io.hanko.fidouafclient.FidoUafClient.class);
 intent.setType("application/fido.uaf_client+json");
 intent.putExtra("UAFIntentType", "UAF_OPERATION");
 intent.putExtra("channelBindings", "{}");
@@ -101,6 +112,25 @@ This is a Client & Authenticator Combo so it only uses it´s build-in authentica
 }
 ```
 
+## Configuration
+
+### Reachability
+> :warning: **Warning: The Fido UAF Client is available for all other apps on the phone through an `org.fidoalliance.intent.FIDO_OPERATION` intent.** :warning:
+
+To disable this functionality, so the client is only available in your app, just add the following to your manifest:
+
+```xml
+<activity android:name="io.hanko.fidouafclient.FidoUafClient">
+    <intent-filter tools:node="removeAll">
+        <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />
+
+        <data android:mimeType="application/fido.uaf_client+json" />
+
+        <category android:name="android.intent.category.DEFAULT" />
+    </intent-filter>
+</activity>
+``` 
+
 ## Customization
 
 ### Strings
@@ -116,23 +146,6 @@ To customize the strings which are displayed during registration and authenticat
     <string name="uafclient_account_chooser_title">Choose your key</string>
 </resources>
 ```
-
-### Reachability
-> :warning: **Warning: The Fido UAF Client is available for all other apps on the phone through an `org.fidoalliance.intent.FIDO_OPERATION` intent.** :warning:
-
-To disable this functionality, so the client is only available in your app, just add the following to your manifest:
-
-```xml
-<activity android:name="io.hanko.fidouafclient.client.MainActivity">
-    <intent-filter tools:node="removeAll">
-        <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />
-
-        <data android:mimeType="application/fido.uaf_client+json" />
-
-        <category android:name="android.intent.category.DEFAULT" />
-    </intent-filter>
-</activity>
-``` 
 
 
 # License

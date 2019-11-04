@@ -13,7 +13,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private val REQUEST_CODE: Int = 1000
-        private val TAG: String = "MainActivity"
+        private val TAG: String = "FidoUafClient"
     }
 
     private val uafRegisterProtocolMessage = "[{\\\"username\\\":\\\"example@example.com\\\",\\\"header\\\":{\\\"upv\\\":{\\\"major\\\":1,\\\"minor\\\":1},\\\"appID\\\":\\\"\\\",\\\"op\\\":\\\"Reg\\\"},\\\"challenge\\\":\\\"KDfXZs6VzxUgbSZOJFrkvr2v457ePFcP0IsWOvnooikF\\\",\\\"policy\\\":{\\\"accepted\\\":[[{\\\"aaid\\\":[\\\"006F#0001\\\"]}]],\\\"disallowed\\\":[{\\\"aaid\\\":[\\\"FFFF#FFFF\\\"]}]}}]"
@@ -25,13 +25,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        buttonRegister.setOnClickListener { startFidoClient(uafMessage(uafRegisterProtocolMessage)); }
-        buttonAuthenticate.setOnClickListener { startFidoClient(uafMessage(uafAuthenticationProtocolMessage)); }
+        buttonRegister.setOnClickListener { startFidoClient(uafMessage(uafRegisterProtocolMessage)) }
+        buttonAuthenticate.setOnClickListener { startFidoClient(uafMessage(uafAuthenticationProtocolMessage)) }
         buttonDeregister.setOnClickListener { startFidoClient(uafMessage(uafDeregisterProtocolMessage)) }
     }
 
     private fun startFidoClient(message: String) {
-        val intent = Intent(this, io.hanko.fidouafclient.client.MainActivity::class.java)
+        val intent = Intent(this, io.hanko.fidouafclient.FidoUafClient::class.java)
         intent.type = "application/fido.uaf_client+json"
         intent.putExtra("UAFIntentType", "UAF_OPERATION")
         intent.putExtra("channelBindings", "{}")

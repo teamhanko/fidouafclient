@@ -36,7 +36,7 @@ object ClientUtil {
     }
 
     fun getReturnIntentType(requestIntent: Intent): UAFIntentType? {
-        return when(requestIntent.getStringExtra("UAFIntentType")) {
+        return when (requestIntent.getStringExtra("UAFIntentType")) {
             "DISCOVER" -> UAFIntentType.DISCOVER_RESULT
             "CHECK_POLICY" -> UAFIntentType.CHECK_POLICY_RESULT
             "UAF_OPERATION" -> UAFIntentType.UAF_OPERATION_RESULT
@@ -70,7 +70,8 @@ object ClientUtil {
 
     fun isFacetIdValid(trustedFacetsJson: String, version: Version, facetId: String): Boolean {
         return try {
-            val trustedFacetList = Util.moshi.adapter(TrustedFacetsList::class.java).fromJson(trustedFacetsJson) ?: TrustedFacetsList(emptyList())
+            val trustedFacetList = Util.moshi.adapter(TrustedFacetsList::class.java).fromJson(trustedFacetsJson)
+                    ?: TrustedFacetsList(emptyList())
 
             trustedFacetList.trustedFacets.filter { it.version?.major == version.major && it.version.minor == version.minor }.any {
                 it.ids?.contains(facetId) ?: false
@@ -95,7 +96,8 @@ object ClientUtil {
             }
         }.filterNotNull().groupBy { it }.keys
 
-        val disallowedAuthenticators = (policy.disallowed?.map { return@map getAuthenticatorFromMatchCriteria(it, appId, isRegistration) }?.filterNotNull() ?: emptyList()).groupBy { it }.keys
+        val disallowedAuthenticators = (policy.disallowed?.map { return@map getAuthenticatorFromMatchCriteria(it, appId, isRegistration) }?.filterNotNull()
+                ?: emptyList()).groupBy { it }.keys
 
         // filter out all disallowed authenticators
         val filteredAuthenticators = (acceptedAuthenticators + disallowedAuthenticators)

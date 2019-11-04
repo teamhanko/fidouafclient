@@ -12,11 +12,9 @@
         android:name="android.hardware.fingerprint"
         android:required="false" />
 
-    <application
-        android:usesCleartextTraffic="true"
-        >
+    <application android:usesCleartextTraffic="true">
         <activity
-            android:name=".client.MainActivity"
+            android:name=".FidoUafClient"
             android:clearTaskOnLaunch="true"
             android:launchMode="singleTop"
             android:theme="@style/AppTheme.NoUi">
@@ -34,13 +32,13 @@
             android:clearTaskOnLaunch="true"
             android:launchMode="singleTop"
             android:theme="@style/AppTheme.NoUi">
-<!--            <intent-filter>-->
-<!--                <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />-->
+            <!--            <intent-filter>-->
+            <!--                <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />-->
 
-<!--                <data android:mimeType="application/fido.uaf_asm+json" />-->
+            <!--                <data android:mimeType="application/fido.uaf_asm+json" />-->
 
-<!--                <category android:name="android.intent.category.DEFAULT" />-->
-<!--            </intent-filter>-->
+            <!--                <category android:name="android.intent.category.DEFAULT" />-->
+            <!--            </intent-filter>-->
         </activity>
     </application>
 </manifest>
