@@ -115,7 +115,7 @@ This is a Client & Authenticator Combo so it only uses it´s build-in authentica
 ## Configuration
 
 ### Reachability
-> :warning: **Warning: The Fido UAF Client is available for all other apps on the phone through an `org.fidoalliance.intent.FIDO_OPERATION` intent.** :warning:
+:warning: **Warning: The Fido UAF Client is available for all other apps on the device through an `org.fidoalliance.intent.FIDO_OPERATION` intent.** :warning:
 
 To disable this functionality, so the client is only available in your app, just add the following to your manifest:
 
