@@ -19,13 +19,13 @@
             android:launchMode="singleTop"
             android:theme="@style/AppTheme.NoUi">
 
-            <intent-filter>
-                <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />
+<!--            <intent-filter>-->
+<!--                <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />-->
 
-                <data android:mimeType="application/fido.uaf_client+json" />
+<!--                <data android:mimeType="application/fido.uaf_client+json" />-->
 
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
+<!--                <category android:name="android.intent.category.DEFAULT" />-->
+<!--            </intent-filter>-->
         </activity>
         <activity
             android:name=".asm.AsmActivity"

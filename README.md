@@ -115,13 +115,11 @@ This is a Client & Authenticator Combo so it only uses it´s build-in authentica
 ## Configuration
 
 ### Reachability
-:warning: **Warning: The Fido UAF Client is available for all other apps on the device through an `org.fidoalliance.intent.FIDO_OPERATION` intent.** :warning:
-
-To disable this functionality, so the client is only available in your app, just add the following to your manifest:
+The FIDO UAF Client is only available for your app. You can make it publicly available for all apps on the device. Just add this to your `AndroidManifest.xml`:  
 
 ```xml
 <activity android:name="io.hanko.fidouafclient.FidoUafClient">
-    <intent-filter tools:node="removeAll">
+    <intent-filter>
         <action android:name="org.fidoalliance.intent.FIDO_OPERATION" />
 
         <data android:mimeType="application/fido.uaf_client+json" />
