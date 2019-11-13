@@ -96,7 +96,37 @@ This is a Client & Authenticator Combo so it only uses it´s build-in authentica
 	"userVerificationDetails": [
 		[
 			{
-				"userVerification": 1
+				"userVerification": 2
+			}
+		],
+		[
+			{
+				"userVerification": 4
+			}
+		],
+		[
+			{
+				"userVerification": 8
+			}
+		],
+		[
+			{
+				"userVerification": 16
+			}
+		],
+		[
+			{
+				"userVerification": 64
+			}
+		],
+		[
+			{
+				"userVerification": 128
+			}
+		],
+		[
+			{
+				"userVerification": 256
 			}
 		]
 	],
