@@ -144,14 +144,19 @@ class AsmActivity : AppCompatActivity() {
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                 super.onAuthenticationError(errorCode, errString)
                 val statusCode = when (errorCode) {
+                    BiometricPrompt.ERROR_CANCELED -> StatusCode.UAF_ASM_STATUS_ACCESS_DENIED
+                    BiometricPrompt.ERROR_HW_NOT_PRESENT -> StatusCode.UAF_ASM_STATUS_INSUFFICIENT_AUTHENTICATOR_RESOURCES
+                    BiometricPrompt.ERROR_HW_UNAVAILABLE -> StatusCode.UAF_ASM_STATUS_INSUFFICIENT_AUTHENTICATOR_RESOURCES
                     BiometricPrompt.ERROR_LOCKOUT -> StatusCode.UAF_ASM_STATUS_USER_LOCKOUT
                     BiometricPrompt.ERROR_LOCKOUT_PERMANENT -> StatusCode.UAF_ASM_STATUS_USER_LOCKOUT
-                    BiometricPrompt.ERROR_NO_SPACE -> StatusCode.UAF_ASM_STATUS_INSUFFICIENT_AUTHENTICATOR_RESOURCES
-                    BiometricPrompt.ERROR_TIMEOUT -> StatusCode.UAF_ASM_STATUS_USER_NOT_RESPONSIVE
-                    BiometricPrompt.ERROR_USER_CANCELED -> StatusCode.UAF_ASM_STATUS_USER_CANCELLED
                     BiometricPrompt.ERROR_NEGATIVE_BUTTON -> StatusCode.UAF_ASM_STATUS_USER_CANCELLED
                     BiometricPrompt.ERROR_NO_BIOMETRICS -> StatusCode.UAF_ASM_STATUS_USER_NOT_ENROLLED
                     BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL -> StatusCode.UAF_ASM_STATUS_USER_NOT_ENROLLED
+                    BiometricPrompt.ERROR_NO_SPACE -> StatusCode.UAF_ASM_STATUS_INSUFFICIENT_AUTHENTICATOR_RESOURCES
+                    BiometricPrompt.ERROR_TIMEOUT -> StatusCode.UAF_ASM_STATUS_USER_NOT_RESPONSIVE
+                    BiometricPrompt.ERROR_UNABLE_TO_PROCESS -> StatusCode.UAF_ASM_STATUS_INSUFFICIENT_AUTHENTICATOR_RESOURCES
+                    BiometricPrompt.ERROR_USER_CANCELED -> StatusCode.UAF_ASM_STATUS_USER_CANCELLED
+                    BiometricPrompt.ERROR_VENDOR -> StatusCode.UAF_ASM_STATUS_ERROR
                     else -> StatusCode.UAF_ASM_STATUS_ERROR
                 }
                 processError?.let { it() }
