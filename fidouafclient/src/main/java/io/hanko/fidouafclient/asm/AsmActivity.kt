@@ -130,7 +130,7 @@ class AsmActivity : AppCompatActivity() {
 
     private fun getPromptInfo(@StringRes titleId: Int, @StringRes descriptionId: Int, transactionText: String? = null): BiometricPrompt.PromptInfo {
         return BiometricPrompt.PromptInfo.Builder()
-                .setDeviceCredentialAllowed(true)
+                .setAllowedAuthenticators(BiometricManager.Authenticators.DEVICE_CREDENTIAL or BiometricManager.Authenticators.BIOMETRIC_STRONG)
                 .setConfirmationRequired(true)
                 .setTitle(getString(titleId))
                 .setSubtitle(getString(descriptionId))
