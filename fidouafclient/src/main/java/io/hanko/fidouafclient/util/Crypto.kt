@@ -1,5 +1,6 @@
 package io.hanko.fidouafclient.util
 
+import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -16,15 +17,21 @@ object Crypto {
         try {
             val keyAlias = getKeyStoreAlias(appId, keyId) ?: return false
             val keyPairGenerator = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, KEYSTORE)
+            val keygenParameterSpecBuilder = KeyGenParameterSpec.Builder(
+                    keyAlias,
+                    KeyProperties.PURPOSE_SIGN
+            ).setDigests(KeyProperties.DIGEST_SHA256, KeyProperties.DIGEST_SHA384, KeyProperties.DIGEST_SHA512)
+                    .setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
+                    .setUserAuthenticationRequired(true)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                keygenParameterSpecBuilder.setUserAuthenticationParameters(5, KeyProperties.AUTH_DEVICE_CREDENTIAL or KeyProperties.AUTH_BIOMETRIC_STRONG)
+            } else {
+                keygenParameterSpecBuilder.setUserAuthenticationValidityDurationSeconds(5)
+            }
+
             keyPairGenerator.initialize(
-                    KeyGenParameterSpec.Builder(
-                            keyAlias,
-                            KeyProperties.PURPOSE_SIGN
-                    ).setDigests(KeyProperties.DIGEST_SHA256, KeyProperties.DIGEST_SHA384, KeyProperties.DIGEST_SHA512)
-                            .setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
-                            .setUserAuthenticationRequired(true)
-                            .setUserAuthenticationValidityDurationSeconds(2)
-                            .build()
+                    keygenParameterSpecBuilder.build()
             )
 
             keyPairGenerator.generateKeyPair()
