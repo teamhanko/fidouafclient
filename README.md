@@ -1,6 +1,6 @@
 # FIDO UAF Client & Authenticator
 [![Build Status](https://travis-ci.org/teamhanko/fidouafclient.svg?branch=master)](https://travis-ci.org/teamhanko/fidouafclient)
-[![Download](https://api.bintray.com/packages/hanko/android/fidouafclient/images/download.svg)](https://bintray.com/hanko/android/fidouafclient/_latestVersion)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.hanko/fidouafclient/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.hanko/fidouafclient)
 
 FIDO UAF Client & Authenticator Combo for Android by Hanko.
 
@@ -8,15 +8,10 @@ FIDO UAF Client & Authenticator Combo for Android by Hanko.
 
 > For more information on how FIDO UAF works, see [FIDO Alliance](https://fidoalliance.org/specifications/download/).
 
-## Breaking Changes
-
-### 0.x.x -> 1.x.x
-
-From 1.0.0 the keyIds are generated in a different, not backwards compatible way. So all before generated keys are not known by the authenticator and can not be used anymore.
 
 ## Installation
 
-The package is distributed through JCenter.
+Since version `1.0.1` the package is distributed through MavenCentral. Before that version the package is distributed through JCenter.
 
 # Requirements
 

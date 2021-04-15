@@ -38,18 +38,12 @@ before_install:
 
 stages:
   - name: build
-  - name: release
-    if: tag IS present
 
 jobs:
   include:
     - stage: build
       script:
         - ./gradlew build
-    - stage: release
-      script:
-        - ./gradlew build -PversionName=$TRAVIS_TAG
-        - ./gradlew :fidouafclient:bintrayUpload -PversionName=$TRAVIS_TAG
 
 notifications:
   email: false
