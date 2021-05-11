@@ -1,6 +1,7 @@
 package io.hanko.fidouafclient.asm
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Base64
 import androidx.annotation.StringRes
@@ -129,13 +130,19 @@ class AsmActivity : AppCompatActivity() {
     }
 
     private fun getPromptInfo(@StringRes titleId: Int, @StringRes descriptionId: Int, transactionText: String? = null): BiometricPrompt.PromptInfo {
-        return BiometricPrompt.PromptInfo.Builder()
-                .setAllowedAuthenticators(BiometricManager.Authenticators.DEVICE_CREDENTIAL or BiometricManager.Authenticators.BIOMETRIC_STRONG)
+        val builder = BiometricPrompt.PromptInfo.Builder()
                 .setConfirmationRequired(true)
                 .setTitle(getString(titleId))
                 .setSubtitle(getString(descriptionId))
                 .setDescription(transactionText)
-                .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            builder.setAllowedAuthenticators(BiometricManager.Authenticators.DEVICE_CREDENTIAL or BiometricManager.Authenticators.BIOMETRIC_STRONG)
+        } else {
+            builder.setDeviceCredentialAllowed(true)
+        }
+
+        return builder.build()
     }
 
     private fun getBiometricPrompt(processRequest: () -> Unit, processError: (() -> Unit)?): BiometricPrompt {
